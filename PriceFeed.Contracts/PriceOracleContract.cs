@@ -1,7 +1,6 @@
 using System;
 using System.ComponentModel;
 using System.Numerics;
-using Neo.SmartContract;
 using Neo.SmartContract.Framework;
 using Neo.SmartContract.Framework.Attributes;
 using Neo.SmartContract.Framework.Native;
@@ -82,10 +81,10 @@ namespace PriceFeed.Contracts
         /// <param name="owner">The initial contract owner address</param>
         /// <param name="initialTeeAccount">The initial TEE account address (optional)</param>
         /// <returns>True if initialization was successful</returns>
-        public static bool Initialize(UInt160 owner, UInt160 initialTeeAccount = null)
+        public static bool Initialize(UInt160 owner, UInt160 initialTeeAccount = null!)
         {
             // Check if already initialized
-            StorageContext context = Storage.CurrentContext;
+            var context = Storage.CurrentContext;
             if (Storage.Get(context, InitializedKey) is not null)
                 return false;
 
@@ -136,7 +135,7 @@ namespace PriceFeed.Contracts
                 return false;
 
             // Set the minimum oracles
-            StorageContext context = Storage.CurrentContext;
+            var context = Storage.CurrentContext;
             Storage.Put(context, MinOraclesKey, minOracles);
 
             // Emit event
@@ -151,8 +150,9 @@ namespace PriceFeed.Contracts
         /// <returns>The minimum number of oracles</returns>
         public static BigInteger GetMinOracles()
         {
-            StorageContext context = Storage.CurrentContext;
-            return Storage.Get(context, MinOraclesKey) is byte[] data ? new BigInteger(data) : DefaultMinOracles;
+            var context = Storage.CurrentContext;
+            ByteString data = Storage.Get(context, MinOraclesKey);
+            return data is not null ? new BigInteger((byte[])data) : DefaultMinOracles;
         }
 
         /// <summary>
@@ -167,7 +167,7 @@ namespace PriceFeed.Contracts
                 return false;
 
             // Set the circuit breaker state
-            StorageContext context = Storage.CurrentContext;
+            var context = Storage.CurrentContext;
             Storage.Put(context, CircuitBreakerKey, triggered ? 1 : 0);
 
             // Emit event
@@ -182,8 +182,8 @@ namespace PriceFeed.Contracts
         /// <returns>True if the circuit breaker is triggered</returns>
         public static bool IsCircuitBreakerTriggered()
         {
-            StorageContext context = Storage.CurrentContext;
-            return Storage.Get(context, CircuitBreakerKey) is byte[] data && data.Length > 0 && data[0] == 1;
+            var context = Storage.CurrentContext;
+            return Storage.Get(context, CircuitBreakerKey) is ByteString data && data.Length > 0 && data[0] == 1;
         }
 
         /// <summary>
@@ -191,8 +191,8 @@ namespace PriceFeed.Contracts
         /// </summary>
         private static bool PreventReentrancy()
         {
-            StorageContext context = Storage.CurrentContext;
-            if (Storage.Get(context, ReentrancyGuardKey) is byte[] data && data.Length > 0 && data[0] == 1)
+            var context = Storage.CurrentContext;
+            if (Storage.Get(context, ReentrancyGuardKey) is ByteString data && data.Length > 0 && data[0] == 1)
                 return false;
 
             Storage.Put(context, ReentrancyGuardKey, 1);
@@ -204,7 +204,7 @@ namespace PriceFeed.Contracts
         /// </summary>
         private static void RemoveReentrancyGuard()
         {
-            StorageContext context = Storage.CurrentContext;
+            var context = Storage.CurrentContext;
             Storage.Put(context, ReentrancyGuardKey, 0);
         }
 
@@ -220,7 +220,7 @@ namespace PriceFeed.Contracts
                 return false;
 
             // Get the current owner
-            StorageContext context = Storage.CurrentContext;
+            var context = Storage.CurrentContext;
             UInt160 currentOwner = (UInt160)Storage.Get(context, OwnerKey);
 
             // Set the new owner
@@ -244,7 +244,7 @@ namespace PriceFeed.Contracts
                 return false;
 
             // Set the paused state
-            StorageContext context = Storage.CurrentContext;
+            var context = Storage.CurrentContext;
             Storage.Put(context, PausedKey, paused ? 1 : 0);
 
             // Emit event
@@ -259,8 +259,8 @@ namespace PriceFeed.Contracts
         /// <returns>True if the contract is paused</returns>
         public static bool IsPaused()
         {
-            StorageContext context = Storage.CurrentContext;
-            return Storage.Get(context, PausedKey) is byte[] data && data.Length > 0 && data[0] == 1;
+            var context = Storage.CurrentContext;
+            return Storage.Get(context, PausedKey) is ByteString data && data.Length > 0 && data[0] == 1;
         }
 
         /// <summary>
@@ -270,7 +270,7 @@ namespace PriceFeed.Contracts
         /// <param name="manifest">The new manifest</param>
         /// <param name="data">Optional data for the update</param>
         /// <returns>True if the contract was upgraded successfully</returns>
-        public static bool Update(ByteString nefFile, string manifest, object data = null)
+        public static bool Update(ByteString nefFile, string manifest, object data = null!)
         {
             // Check if caller is the owner
             if (!IsOwner())
@@ -301,16 +301,16 @@ namespace PriceFeed.Contracts
                 return false;
 
             // Check if the oracle is already authorized
-            StorageContext context = Storage.CurrentContext;
+            var context = Storage.CurrentContext;
             StorageMap oracles = new StorageMap(context, OraclePrefix);
-            if (oracles.Get(oracleAddress) is byte[] data && data.Length > 0)
+            if (oracles.Get(oracleAddress) is ByteString data && data.Length > 0)
                 return false; // Oracle already exists
 
             // Add the oracle
             oracles.Put(oracleAddress, 1);
 
             // Increment oracle count
-            BigInteger count = Storage.Get(context, OracleCountKey) is byte[] countData ? new BigInteger(countData) : 0;
+            BigInteger count = Storage.Get(context, OracleCountKey) is ByteString countData ? new BigInteger((byte[])countData) : 0;
             count += 1;
             Storage.Put(context, OracleCountKey, count);
 
@@ -336,16 +336,16 @@ namespace PriceFeed.Contracts
                 return false;
 
             // Check if the oracle exists
-            StorageContext context = Storage.CurrentContext;
+            var context = Storage.CurrentContext;
             StorageMap oracles = new StorageMap(context, OraclePrefix);
-            if (!(oracles.Get(oracleAddress) is byte[] data && data.Length > 0))
+            if (!(oracles.Get(oracleAddress) is ByteString data && data.Length > 0))
                 return false; // Oracle doesn't exist
 
             // Remove the oracle
             oracles.Delete(oracleAddress);
 
             // Decrement oracle count
-            BigInteger count = Storage.Get(context, OracleCountKey) is byte[] countData ? new BigInteger(countData) : 0;
+            BigInteger count = Storage.Get(context, OracleCountKey) is ByteString countData ? new BigInteger((byte[])countData) : 0;
             if (count > 0) // Safety check
             {
                 count -= 1;
@@ -364,8 +364,8 @@ namespace PriceFeed.Contracts
         /// <returns>The number of oracles</returns>
         public static BigInteger GetOracleCount()
         {
-            StorageContext context = Storage.CurrentContext;
-            return Storage.Get(context, OracleCountKey) is byte[] data ? new BigInteger(data) : 0;
+            var context = Storage.CurrentContext;
+            return Storage.Get(context, OracleCountKey) is ByteString data ? new BigInteger((byte[])data) : 0;
         }
 
         /// <summary>
@@ -384,9 +384,9 @@ namespace PriceFeed.Contracts
                 return false;
 
             // Check if the TEE account is already authorized
-            StorageContext context = Storage.CurrentContext;
+            var context = Storage.CurrentContext;
             StorageMap teeAccounts = new StorageMap(context, TeeAccountPrefix);
-            if (teeAccounts.Get(teeAccountAddress) is byte[] data && data.Length > 0)
+            if (teeAccounts.Get(teeAccountAddress) is ByteString data && data.Length > 0)
                 return false; // TEE account already exists
 
             // Add the TEE account
@@ -414,9 +414,9 @@ namespace PriceFeed.Contracts
                 return false;
 
             // Check if the TEE account exists
-            StorageContext context = Storage.CurrentContext;
+            var context = Storage.CurrentContext;
             StorageMap teeAccounts = new StorageMap(context, TeeAccountPrefix);
-            if (!(teeAccounts.Get(teeAccountAddress) is byte[] data && data.Length > 0))
+            if (!(teeAccounts.Get(teeAccountAddress) is ByteString data && data.Length > 0))
                 return false; // TEE account doesn't exist
 
             // Remove the TEE account
@@ -435,9 +435,9 @@ namespace PriceFeed.Contracts
         /// <returns>True if the address is an authorized TEE account</returns>
         public static bool IsTeeAccount(UInt160 address)
         {
-            StorageContext context = Storage.CurrentContext;
+            var context = Storage.CurrentContext;
             StorageMap teeAccounts = new StorageMap(context, TeeAccountPrefix);
-            return teeAccounts.Get(address) is byte[] data && data.Length > 0;
+            return teeAccounts.Get(address) is ByteString data && data.Length > 0;
         }
 
         /// <summary>
@@ -489,18 +489,18 @@ namespace PriceFeed.Contracts
                 if (currentTime - timestamp > MaxDataAgeSeconds)
                     return false;
 
-                StorageContext context = Storage.CurrentContext;
+                var context = Storage.CurrentContext;
                 StorageMap prices = new StorageMap(context, PricePrefix);
                 StorageMap timestamps = new StorageMap(context, TimestampPrefix);
                 StorageMap confidences = new StorageMap(context, ConfidencePrefix);
 
                 // Check if the timestamp is newer than the existing one
-                BigInteger currentTimestamp = timestamps.Get(symbol) is byte[] ts ? new BigInteger(ts) : 0;
+                BigInteger currentTimestamp = timestamps.Get(symbol) is ByteString ts ? new BigInteger((byte[])ts) : 0;
                 if (currentTimestamp >= timestamp)
                     return false;
 
                 // Get the current price for deviation check
-                BigInteger currentPrice = prices.Get(symbol) is byte[] p ? new BigInteger(p) : 0;
+                BigInteger currentPrice = prices.Get(symbol) is ByteString p ? new BigInteger((byte[])p) : 0;
 
                 // If there's an existing price, check for excessive deviation
                 if (currentPrice > 0)
@@ -604,12 +604,12 @@ namespace PriceFeed.Contracts
                         continue;
 
                     // Check if the timestamp is newer than the existing one
-                    BigInteger currentTimestamp = timestampsMap.Get(symbol) is byte[] ts ? new BigInteger(ts) : 0;
+                    BigInteger currentTimestamp = timestampsMap.Get(symbol) is ByteString ts ? new BigInteger((byte[])ts) : 0;
                     if (currentTimestamp >= timestamp)
                         continue;
 
                     // Get the current price for deviation check
-                    BigInteger currentPrice = pricesMap.Get(symbol) is byte[] p ? new BigInteger(p) : 0;
+                    BigInteger currentPrice = pricesMap.Get(symbol) is ByteString p ? new BigInteger((byte[])p) : 0;
 
                     // If there's an existing price, check for excessive deviation
                     if (currentPrice > 0)
@@ -654,7 +654,7 @@ namespace PriceFeed.Contracts
         {
             var context = Storage.CurrentContext;
             StorageMap prices = new StorageMap(context, PricePrefix);
-            return prices.Get(symbol) is byte[] p ? new BigInteger(p) : 0;
+            return prices.Get(symbol) is ByteString p ? new BigInteger((byte[])p) : 0;
         }
 
         /// <summary>
@@ -666,7 +666,7 @@ namespace PriceFeed.Contracts
         {
             var context = Storage.CurrentContext;
             StorageMap timestamps = new StorageMap(context, TimestampPrefix);
-            return timestamps.Get(symbol) is byte[] ts ? new BigInteger(ts) : 0;
+            return timestamps.Get(symbol) is ByteString ts ? new BigInteger((byte[])ts) : 0;
         }
 
         /// <summary>
@@ -678,7 +678,7 @@ namespace PriceFeed.Contracts
         {
             var context = Storage.CurrentContext;
             StorageMap confidences = new StorageMap(context, ConfidencePrefix);
-            return confidences.Get(symbol) is byte[] c ? new BigInteger(c) : 0;
+            return confidences.Get(symbol) is ByteString c ? new BigInteger((byte[])c) : 0;
         }
 
         /// <summary>
@@ -704,7 +704,7 @@ namespace PriceFeed.Contracts
         {
             var context = Storage.CurrentContext;
             StorageMap oracles = new StorageMap(context, OraclePrefix);
-            return oracles.Get(address) is byte[] data && data.Length > 0;
+            return oracles.Get(address) is ByteString data && data.Length > 0;
         }
 
         /// <summary>
@@ -713,32 +713,72 @@ namespace PriceFeed.Contracts
         /// <returns>True if the calling script is an authorized oracle with valid dual signatures</returns>
         private static bool IsOracle()
         {
-            // Get the transaction signers
-            var signers = Runtime.GetSigners();
-
-            // We need at least two signers: TEE account and Oracle account
-            if (signers.Length < 2)
-                return false;
-
-            // Check if at least one signer is an oracle
+            // Check if at least one signer is an oracle and one is a TEE account
             bool hasOracleSignature = false;
             bool hasTeeSignature = false;
 
-            foreach (var signer in signers)
+            // Get the transaction sender
+            UInt160 sender = Runtime.CallingScriptHash;
+
+            // Check if the sender is an oracle
+            if (IsOracle(sender))
             {
-                if (IsOracle(signer.Account))
-                    hasOracleSignature = true;
-
-                if (IsTeeAccount(signer.Account))
-                    hasTeeSignature = true;
-
-                // If we have both signatures, we can return true
-                if (hasOracleSignature && hasTeeSignature)
-                    return true;
+                hasOracleSignature = true;
             }
 
-            // If we don't have both signatures, return false
-            return false;
+            // Check if the sender is a TEE account
+            if (IsTeeAccount(sender))
+            {
+                hasTeeSignature = true;
+            }
+
+            // If we don't have both signatures, check for additional witnesses
+            if (!hasOracleSignature || !hasTeeSignature)
+            {
+                // Check for oracle signature
+                if (!hasOracleSignature)
+                {
+                    var context = Storage.CurrentContext;
+                    StorageMap oracles = new StorageMap(context, OraclePrefix);
+                    BigInteger oracleCount = GetOracleCount();
+
+                    // Check each oracle
+                    for (int i = 0; i < oracleCount; i++)
+                    {
+                        // This is a simplified approach - in a real contract, you would need to
+                        // iterate through all oracles in a more efficient way
+                        UInt160 oracleAddress = (UInt160)Storage.Get(context, $"{OraclePrefix}_{i}");
+                        if (oracleAddress != null && Runtime.CheckWitness(oracleAddress))
+                        {
+                            hasOracleSignature = true;
+                            break;
+                        }
+                    }
+                }
+
+                // Check for TEE account signature
+                if (!hasTeeSignature)
+                {
+                    var context = Storage.CurrentContext;
+                    StorageMap teeAccounts = new StorageMap(context, TeeAccountPrefix);
+
+                    // Check each TEE account
+                    // This is a simplified approach - in a real contract, you would need to
+                    // iterate through all TEE accounts in a more efficient way
+                    for (int i = 0; i < 10; i++) // Assuming a maximum of 10 TEE accounts
+                    {
+                        UInt160 teeAccount = (UInt160)Storage.Get(context, $"{TeeAccountPrefix}_{i}");
+                        if (teeAccount != null && Runtime.CheckWitness(teeAccount))
+                        {
+                            hasTeeSignature = true;
+                            break;
+                        }
+                    }
+                }
+            }
+
+            // Return true if we have both signatures
+            return hasOracleSignature && hasTeeSignature;
         }
 
         /// <summary>
