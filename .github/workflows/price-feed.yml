@@ -23,10 +23,10 @@ jobs:
         dotnet-version: 9.0.x
 
     - name: Restore dependencies
-      run: dotnet restore
+      run: dotnet restore --ignore-projects PriceFeed.Contracts/PriceFeed.Contracts.csproj
 
     - name: Build
-      run: dotnet build --configuration Release --no-restore
+      run: dotnet build --configuration Release --no-restore --exclude PriceFeed.Contracts
 
     - name: Run Price Feed
       run: dotnet run --project PriceFeed.Console/PriceFeed.Console.csproj --configuration Release
