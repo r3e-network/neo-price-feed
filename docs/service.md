@@ -191,8 +191,8 @@ The TEE execution is defined in a configuration file:
 name: Scheduled Price Feed
 
 schedule:
-  # Run every 5 minutes
-  cron: '*/5 * * * *'
+  # Run once per week on Monday at 00:00 UTC
+  cron: '0 0 * * 1'
 
   # Allow manual triggering
   manual: true

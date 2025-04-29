@@ -114,8 +114,8 @@ Instead of manually creating a Neo account, we'll use the secure key generation 
    ```yaml
    on:
      schedule:
-       # Run every 5 minutes
-       - cron: '*/5 * * * *'
+       # Run once per week on Monday at 00:00 UTC
+       - cron: '0 0 * * 1'
      workflow_dispatch:  # Allow manual triggering
    ```
 

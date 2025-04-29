@@ -214,8 +214,8 @@ The price feed service runs on a schedule defined by a cron expression in the Gi
 # In .github/workflows/scheduled-price-feed.yml
 on:
   schedule:
-    # Run every 5 minutes
-    - cron: '*/5 * * * *'
+    # Run once per week on Monday at 00:00 UTC
+    - cron: '0 0 * * 1'
 ```
 
 To change how often the service runs, simply update the cron expression in the workflow file.
@@ -224,7 +224,7 @@ For more information, see the [Configuring Intervals Documentation](docs/configu
 
 #### Trusted Execution Environment
 
-The application is configured to run automatically in the TEE on a schedule (every 5 minutes by default). It can also be triggered manually when needed.
+The application is configured to run automatically in the TEE on a schedule (once per week by default). It can also be triggered manually when needed.
 
 ### Running Tests
 
@@ -271,8 +271,8 @@ name: Neo Price Feed Service
 
 on:
   schedule:
-    # Run every 5 minutes
-    - cron: '*/5 * * * *'
+    # Run once per week on Monday at 00:00 UTC
+    - cron: '0 0 * * 1'
   workflow_dispatch:  # Allow manual triggering
 
 jobs:
@@ -318,7 +318,7 @@ jobs:
 
 ### Configuring the Workflow
 
-1. **Schedule**: The workflow is configured to run every 5 minutes by default. You can adjust the schedule by modifying the cron expression in the workflow file.
+1. **Schedule**: The workflow is configured to run once per week (Monday at 00:00 UTC) by default. You can adjust the schedule by modifying the cron expression in the workflow file.
 
 2. **Manual Triggering**: You can also trigger the workflow manually using the GitHub Actions UI.
 

@@ -15,8 +15,8 @@ To change how often the price feed service runs:
    ```yaml
    on:
      schedule:
-       # Run every 5 minutes
-       - cron: '*/5 * * * *'
+       # Run once per week on Monday at 00:00 UTC
+       - cron: '0 0 * * 1'
    ```
 3. Update the cron expression to your desired schedule
 4. Commit and push the changes
@@ -49,6 +49,7 @@ Cron expressions use the following format:
 | Every 6 hours | `0 */6 * * *` |
 | Every 12 hours | `0 */12 * * *` |
 | Once a day (midnight) | `0 0 * * *` |
+| Once a week (Monday at midnight) | `0 0 * * 1` |
 
 ## Recommendations
 
@@ -60,9 +61,10 @@ When choosing an interval, consider:
 
 ### Recommended Intervals
 
-- **High-Frequency Updates** (for volatile assets): Every 2-5 minutes
-- **Standard Updates** (balanced approach): Every 10-15 minutes
-- **Low-Frequency Updates** (for stable assets): Every hour or longer
+- **High-Frequency Updates** (for volatile assets): Every 5-15 minutes
+- **Standard Updates** (balanced approach): Every hour or daily
+- **Low-Frequency Updates** (for stable assets): Daily or weekly
+- **Very Low-Frequency Updates** (for extremely stable assets): Weekly or monthly
 
 ## Example Configurations
 
@@ -89,8 +91,17 @@ on:
 ```yaml
 on:
   schedule:
-    # Run every hour
-    - cron: '0 * * * *'
+    # Run every day at midnight
+    - cron: '0 0 * * *'
+```
+
+### Very Low-Frequency Updates
+
+```yaml
+on:
+  schedule:
+    # Run once per week on Monday at midnight
+    - cron: '0 0 * * 1'
 ```
 
 ## GitHub Actions Limitations
