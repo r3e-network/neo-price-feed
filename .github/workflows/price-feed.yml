@@ -1,0 +1,47 @@
+name: Neo Price Feed Service (TEE)
+
+on:
+  schedule:
+    # Run every 5 minutes
+    - cron: '*/5 * * * *'
+  workflow_dispatch:  # Allow manual triggering
+
+jobs:
+  run-price-feed:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write  # Required for attestation
+      contents: read
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v3
+      with:
+        dotnet-version: 9.0.x
+
+    - name: Restore dependencies
+      run: dotnet restore
+
+    - name: Build
+      run: dotnet build --configuration Release --no-restore
+
+    - name: Run Price Feed
+      run: dotnet run --project PriceFeed.Console/PriceFeed.Console.csproj --configuration Release
+      env:
+        BINANCE_API_KEY: ${{ secrets.BINANCE_API_KEY }}
+        BINANCE_API_SECRET: ${{ secrets.BINANCE_API_SECRET }}
+        COINMARKETCAP_API_KEY: ${{ secrets.COINMARKETCAP_API_KEY }}
+        COINBASE_API_KEY: ${{ secrets.COINBASE_API_KEY }}
+        COINBASE_API_SECRET: ${{ secrets.COINBASE_API_SECRET }}
+        OKEX_API_KEY: ${{ secrets.OKEX_API_KEY }}
+        OKEX_API_SECRET: ${{ secrets.OKEX_API_SECRET }}
+        OKEX_PASSPHRASE: ${{ secrets.OKEX_PASSPHRASE }}
+        NEO_RPC_ENDPOINT: ${{ secrets.NEO_RPC_ENDPOINT }}
+        NEO_CONTRACT_HASH: ${{ secrets.NEO_CONTRACT_HASH }}
+        NEO_ACCOUNT_ADDRESS: ${{ secrets.NEO_ACCOUNT_ADDRESS }}
+        NEO_ACCOUNT_PRIVATE_KEY: ${{ secrets.NEO_ACCOUNT_PRIVATE_KEY }}
+        NEO_MASTER_ACCOUNT_PRIVATE_KEY: ${{ secrets.NEO_MASTER_ACCOUNT_PRIVATE_KEY }}
+        SYMBOLS: "NEOBTC,NEOUSDT,BTCUSDT,FLMUSDT"

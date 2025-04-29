@@ -1,0 +1,232 @@
+name: Generate Neo Account in TEE
+
+on: workflow_dispatch
+
+jobs:
+  generate-key:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: 9.0.x
+
+      - name: Restore dependencies
+        run: dotnet restore
+
+      - name: Install sodium for encryption
+        run: npm install tweetsodium
+
+      - name: Check for Existing Account
+        id: check-account
+        uses: actions/github-script@v6
+        with:
+          github-token: ${{ secrets.REPO_ACCESS_TOKEN }}
+          script: |
+            try {
+              // Check if NEO_ACCOUNT_ADDRESS secret exists
+              const { data: secrets } = await github.rest.actions.listRepoSecrets({
+                owner: context.repo.owner,
+                repo: context.repo.repo
+              });
+
+              const accountExists = secrets.secrets.some(secret => secret.name === 'NEO_ACCOUNT_ADDRESS');
+
+              if (accountExists) {
+                console.log('⚠️ WARNING: Neo account already exists in GitHub Secrets!');
+                console.log('To prevent accidental overwriting of the existing account, this workflow will exit.');
+                console.log('If you REALLY want to generate a new account and replace the existing one,');
+                console.log('please delete the NEO_ACCOUNT_ADDRESS and NEO_ACCOUNT_PRIVATE_KEY secrets first.');
+
+                // Set output to indicate account exists
+                core.setOutput('account_exists', 'true');
+                return;
+              }
+
+              // Set output to indicate no account exists
+              core.setOutput('account_exists', 'false');
+              console.log('No existing Neo account found. Proceeding with account generation...');
+            } catch (error) {
+              console.error('Error checking for existing account:', error);
+              // If we can't check, assume no account exists to allow generation
+              core.setOutput('account_exists', 'false');
+            }
+
+      - name: Generate Neo Account
+        id: generate-account
+        if: steps.check-account.outputs.account_exists != 'true'
+        run: |
+          # Build and run the key generator
+          dotnet build --configuration Release
+
+          # Create a temporary directory with restricted permissions
+          mkdir -p -m 700 ./temp_secrets
+
+          # Generate a new Neo account and write directly to a secure file
+          # This prevents the sensitive information from appearing in logs
+          dotnet run --project PriceFeed.Console/PriceFeed.Console.csproj --configuration Release -- --generate-account --secure-output ./temp_secrets/account.txt
+
+          # Read the secure file to extract address and WIF
+          if [ -f "./temp_secrets/account.txt" ]; then
+            # Extract address and WIF without printing to console
+            ADDRESS=$(grep "Address:" ./temp_secrets/account.txt | cut -d' ' -f2)
+            WIF=$(grep "WIF:" ./temp_secrets/account.txt | cut -d' ' -f2)
+
+            # Set outputs for use in next steps using the special ::add-mask:: syntax
+            # This ensures the values are masked in logs
+            echo "::add-mask::$ADDRESS"
+            echo "::add-mask::$WIF"
+            echo "ADDRESS=$ADDRESS" >> $GITHUB_ENV
+            echo "WIF=$WIF" >> $GITHUB_ENV
+
+            # Only display a masked version of the address for verification
+            MASKED_ADDRESS="${ADDRESS:0:4}...${ADDRESS: -4}"
+            echo "Generated Neo account with masked address: $MASKED_ADDRESS"
+
+            # Securely delete the temporary file
+            shred -u ./temp_secrets/account.txt
+          else
+            echo "::error::Failed to generate Neo account"
+            exit 1
+          fi
+
+          # Remove the temporary directory
+          rm -rf ./temp_secrets
+
+      - name: Account Already Exists
+        if: steps.check-account.outputs.account_exists == 'true'
+        run: |
+          echo "::error::Neo account already exists in GitHub Secrets. Workflow stopped to prevent overwriting."
+          exit 1
+
+      - name: Create Account Attestation
+        if: steps.check-account.outputs.account_exists != 'true'
+        run: |
+          # Create attestation directory
+          mkdir -p attestations
+
+          # Run the attestation creator
+          dotnet run --project PriceFeed.Console/PriceFeed.Console.csproj --configuration Release -- --create-account-attestation --account-address ${{ env.ADDRESS }}
+
+          echo "Created account attestation"
+
+      - name: Upload Attestation as Artifact
+        if: steps.check-account.outputs.account_exists != 'true'
+        uses: actions/upload-artifact@v3
+        with:
+          name: account-attestation
+          path: attestations/account_attestation.json
+          retention-days: 90  # Keep account attestation for 90 days
+
+      - name: Store Account as GitHub Secrets
+        if: steps.check-account.outputs.account_exists != 'true'
+        uses: actions/github-script@v6
+        with:
+          github-token: ${{ secrets.REPO_ACCESS_TOKEN }}
+          script: |
+            const sodium = require('tweetsodium');
+
+            // Get repository public key for secret encryption
+            const { data: repoPublicKey } = await github.rest.actions.getRepoPublicKey({
+              owner: context.repo.owner,
+              repo: context.repo.repo
+            });
+
+            // Function to create or update a secret
+            const createOrUpdateSecret = async (secretName, secretValue) => {
+              // Convert secret to bytes
+              const secretBytes = Buffer.from(secretValue);
+              // Encrypt the secret using the repository public key
+              const encryptedBytes = sodium.seal(secretBytes, Buffer.from(repoPublicKey.key, 'base64'));
+              // Convert encrypted bytes to base64 string
+              const encryptedValue = Buffer.from(encryptedBytes).toString('base64');
+
+              // Create or update the secret
+              await github.rest.actions.createOrUpdateRepoSecret({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                secret_name: secretName,
+                encrypted_value: encryptedValue,
+                key_id: repoPublicKey.key_id
+              });
+
+              console.log(`Secret ${secretName} created or updated successfully`);
+            };
+
+            // Store the address and WIF as TEE account secrets
+            await createOrUpdateSecret('NEO_TEE_ACCOUNT_ADDRESS', process.env.ADDRESS);
+            await createOrUpdateSecret('NEO_TEE_ACCOUNT_PRIVATE_KEY', process.env.WIF);
+
+            // For backward compatibility, also store as the old secret names
+            await createOrUpdateSecret('NEO_ACCOUNT_ADDRESS', process.env.ADDRESS);
+            await createOrUpdateSecret('NEO_ACCOUNT_PRIVATE_KEY', process.env.WIF);
+
+            console.log('Neo account credentials stored as GitHub Secrets');
+
+      - name: Create Recovery Instructions
+        if: steps.check-account.outputs.account_exists != 'true'
+        run: |
+          # Create a file with recovery instructions
+          # This provides guidance on how to recover if GitHub Secrets are accidentally deleted
+
+          # Create backup directory
+          mkdir -p backup
+
+          # Create a backup file with a timestamp
+          TIMESTAMP=$(date +"%Y%m%d_%H%M%S")
+          BACKUP_FILE="backup/neo_account_recovery_$TIMESTAMP.txt"
+
+          # Save recovery instructions
+          cat << EOF > $BACKUP_FILE
+          # Neo Account Recovery Instructions
+
+          This file provides instructions for recovering the Neo account if the GitHub Secrets are accidentally deleted.
+
+          ## Important Security Notice
+
+          The Neo account credentials are stored ONLY in GitHub Secrets. For security reasons:
+          - The private key is NOT stored anywhere else
+          - There is NO backup of the private key outside of GitHub Secrets
+          - Only GitHub Actions has access to the private key
+
+          ## Recovery Options
+
+          If the GitHub Secrets are accidentally deleted, you have the following options:
+
+          ### Option 1: Generate a New Account (Recommended)
+
+          1. Delete the existing NEO_ACCOUNT_ADDRESS and NEO_ACCOUNT_PRIVATE_KEY secrets (if they exist)
+          2. Run the GenerateKey.yml workflow to generate a new account
+          3. Update any contracts or services that depend on the account address
+
+          ### Option 2: Contact GitHub Support
+
+          In some cases, GitHub Support may be able to help recover recently deleted secrets.
+          See: https://docs.github.com/en/rest/actions/secrets
+
+          ## Prevention
+
+          To prevent accidental deletion of secrets:
+          1. Restrict access to repository settings
+          2. Use branch protection rules to prevent unauthorized changes to workflows
+          3. Regularly audit access to the repository
+
+          ## Account Information
+
+          Public Address: ${ADDRESS:0:4}...${ADDRESS: -4} (masked for security)
+          Generated: $(date)
+
+          EOF
+
+          echo "Recovery instructions created at $BACKUP_FILE"
+
+      - name: Upload Recovery Instructions as Artifact
+        if: steps.check-account.outputs.account_exists != 'true'
+        uses: actions/upload-artifact@v3
+        with:
+          name: neo-account-recovery
+          path: backup/
+          retention-days: 90  # Keep recovery instructions for 90 days

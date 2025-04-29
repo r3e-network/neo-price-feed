@@ -1,0 +1,12 @@
+# This file defines who should review changes to critical files
+# For more information, see: https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+
+# GitHub workflow files require approval from repository administrators
+/.github/workflows/ @repo-admin
+
+# Core security-related files require approval from repository administrators
+/PriceFeed.Infrastructure/Services/AttestationService.cs @repo-admin
+/PriceFeed.Core/Models/AttestationData.cs @repo-admin
+/docs/account-persistence.md @repo-admin
+
+# Replace @repo-admin with the actual GitHub username or team of your repository administrators
