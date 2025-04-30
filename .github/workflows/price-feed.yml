@@ -29,7 +29,12 @@ jobs:
       run: dotnet build --configuration Release --no-restore
 
     - name: Run Price Feed
-      run: dotnet run --project PriceFeed.Console/PriceFeed.Console.csproj --configuration Release
+      run: |
+        # Create attestations directory
+        mkdir -p attestations
+
+        # Run the price feed service
+        dotnet run --project PriceFeed.Console/PriceFeed.Console.csproj --configuration Release
       env:
         BINANCE_API_KEY: ${{ secrets.BINANCE_API_KEY }}
         BINANCE_API_SECRET: ${{ secrets.BINANCE_API_SECRET }}
@@ -45,3 +50,10 @@ jobs:
         NEO_ACCOUNT_PRIVATE_KEY: ${{ secrets.NEO_ACCOUNT_PRIVATE_KEY }}
         NEO_MASTER_ACCOUNT_PRIVATE_KEY: ${{ secrets.NEO_MASTER_ACCOUNT_PRIVATE_KEY }}
         SYMBOLS: "NEOBTC,NEOUSDT,BTCUSDT,FLMUSDT"
+
+    - name: Upload Price Feed Attestations
+      uses: actions/upload-artifact@v3
+      with:
+        name: price-feed-attestations
+        path: attestations/
+        retention-days: 30  # Keep attestations for 30 days
