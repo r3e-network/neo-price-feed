@@ -1,0 +1,20 @@
+name: Test Workflow
+
+on:
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+      
+      - name: Create test file
+        run: echo "Hello, world!" > test.txt
+      
+      - name: Upload test file
+        uses: actions/upload-artifact@v1
+        with:
+          name: test-file
+          path: test.txt

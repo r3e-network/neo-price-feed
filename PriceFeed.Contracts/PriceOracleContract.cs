@@ -713,71 +713,38 @@ namespace PriceFeed.Contracts
         /// <returns>True if the calling script is an authorized oracle with valid dual signatures</returns>
         private static bool IsOracle()
         {
-            // Check if at least one signer is an oracle and one is a TEE account
+            Transaction? tx = Runtime.Transaction;
+            if (tx is null || tx.Signers.Length < 2) 
+                return false;
+
             bool hasOracleSignature = false;
             bool hasTeeSignature = false;
 
-            // Get the transaction sender
-            UInt160 sender = Runtime.CallingScriptHash;
+            var context = Storage.CurrentContext;
+            StorageMap oraclesMap = new StorageMap(context, OraclePrefix);
+            StorageMap teeAccountsMap = new StorageMap(context, TeeAccountPrefix);
 
-            // Check if the sender is an oracle
-            if (IsOracle(sender))
+            foreach (Signer signer in tx.Signers)
             {
-                hasOracleSignature = true;
-            }
-
-            // Check if the sender is a TEE account
-            if (IsTeeAccount(sender))
-            {
-                hasTeeSignature = true;
-            }
-
-            // If we don't have both signatures, check for additional witnesses
-            if (!hasOracleSignature || !hasTeeSignature)
-            {
-                // Check for oracle signature
-                if (!hasOracleSignature)
+                if ((signer.Scopes & WitnessScope.CalledByEntry) != WitnessScope.CalledByEntry)
                 {
-                    var context = Storage.CurrentContext;
-                    StorageMap oracles = new StorageMap(context, OraclePrefix);
-                    BigInteger oracleCount = GetOracleCount();
-
-                    // Check each oracle
-                    for (int i = 0; i < oracleCount; i++)
-                    {
-                        // This is a simplified approach - in a real contract, you would need to
-                        // iterate through all oracles in a more efficient way
-                        UInt160 oracleAddress = (UInt160)Storage.Get(context, $"{OraclePrefix}_{i}");
-                        if (oracleAddress != null && Runtime.CheckWitness(oracleAddress))
-                        {
-                            hasOracleSignature = true;
-                            break;
-                        }
-                    }
+                    continue; 
                 }
 
-                // Check for TEE account signature
-                if (!hasTeeSignature)
+                if (!hasOracleSignature && oraclesMap.Get(signer.Account) is not null)
                 {
-                    var context = Storage.CurrentContext;
-                    StorageMap teeAccounts = new StorageMap(context, TeeAccountPrefix);
-
-                    // Check each TEE account
-                    // This is a simplified approach - in a real contract, you would need to
-                    // iterate through all TEE accounts in a more efficient way
-                    for (int i = 0; i < 10; i++) // Assuming a maximum of 10 TEE accounts
-                    {
-                        UInt160 teeAccount = (UInt160)Storage.Get(context, $"{TeeAccountPrefix}_{i}");
-                        if (teeAccount != null && Runtime.CheckWitness(teeAccount))
-                        {
-                            hasTeeSignature = true;
-                            break;
-                        }
-                    }
+                    hasOracleSignature = true;
                 }
+                
+                if (!hasTeeSignature && teeAccountsMap.Get(signer.Account) is not null)
+                {
+                    hasTeeSignature = true;
+                }
+
+                if (hasOracleSignature && hasTeeSignature)
+                    break; 
             }
 
-            // Return true if we have both signatures
             return hasOracleSignature && hasTeeSignature;
         }
 
