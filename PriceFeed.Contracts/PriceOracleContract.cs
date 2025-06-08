@@ -6,6 +6,7 @@ using Neo.SmartContract.Framework.Attributes;
 using Neo.SmartContract.Framework.Native;
 using Neo.SmartContract.Framework.Services;
 using UInt160 = Neo.SmartContract.Framework.UInt160;
+using Storage = Neo.SmartContract.Framework.Services.Storage;
 
 namespace PriceFeed.Contracts
 {
@@ -713,10 +714,6 @@ namespace PriceFeed.Contracts
         /// <returns>True if the calling script is an authorized oracle with valid dual signatures</returns>
         private static bool IsOracle()
         {
-            Transaction? tx = Runtime.Transaction;
-            if (tx is null || tx.Signers.Length < 2) 
-                return false;
-
             bool hasOracleSignature = false;
             bool hasTeeSignature = false;
 
@@ -724,27 +721,32 @@ namespace PriceFeed.Contracts
             StorageMap oraclesMap = new StorageMap(context, OraclePrefix);
             StorageMap teeAccountsMap = new StorageMap(context, TeeAccountPrefix);
 
-            foreach (Signer signer in tx.Signers)
+            // In Neo N3, we need to use a different approach to verify transaction signers
+            // We'll iterate through all authorized oracles and check if they've signed
+            var oracleIterator = oraclesMap.Find();
+            while (oracleIterator.Next())
             {
-                if ((signer.Scopes & WitnessScope.CalledByEntry) != WitnessScope.CalledByEntry)
-                {
-                    continue; 
-                }
-
-                if (!hasOracleSignature && oraclesMap.Get(signer.Account) is not null)
+                UInt160 oracleAddress = (UInt160)(oracleIterator.Value as ByteString);
+                if (Runtime.CheckWitness(oracleAddress))
                 {
                     hasOracleSignature = true;
+                    break;
                 }
-                
-                if (!hasTeeSignature && teeAccountsMap.Get(signer.Account) is not null)
-                {
-                    hasTeeSignature = true;
-                }
-
-                if (hasOracleSignature && hasTeeSignature)
-                    break; 
             }
 
+            // Similarly check for TEE account signatures
+            var teeIterator = teeAccountsMap.Find();
+            while (teeIterator.Next())
+            {
+                UInt160 teeAddress = (UInt160)(teeIterator.Value as ByteString);
+                if (Runtime.CheckWitness(teeAddress))
+                {
+                    hasTeeSignature = true;
+                    break;
+                }
+            }
+
+            // Both signatures are required
             return hasOracleSignature && hasTeeSignature;
         }
 
