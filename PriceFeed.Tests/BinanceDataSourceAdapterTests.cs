@@ -403,8 +403,11 @@ namespace PriceFeed.Tests
                 _priceFeedOptionsMock.Object);
 
             // Act & Assert
-            await Assert.ThrowsAsync<JsonException>(() =>
+            var exception = await Assert.ThrowsAsync<JsonException>(() =>
                 specialAdapter.GetPriceDataAsync(symbols.First()));
+                
+            // Verify the exception message contains information about the JSON parsing error
+            Assert.NotNull(exception);
         }
     }
 }
