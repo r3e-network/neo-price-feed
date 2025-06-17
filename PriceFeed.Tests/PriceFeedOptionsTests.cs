@@ -35,7 +35,7 @@ namespace PriceFeed.Tests
             // Act
             var options = new PriceFeedOptions();
 
-            // Assert
+            // Assert //?
             Assert.Contains("BTCUSDT", options.Symbols);
             Assert.Contains("123", options.Symbols);
             Assert.Contains("ETHBTC", options.Symbols);
