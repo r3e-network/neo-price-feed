@@ -34,7 +34,7 @@ public class NeoIntegrationTests
         _mockLogger = new Mock<ILogger<BatchProcessingService>>();
         _mockHttpClientFactory = new Mock<IHttpClientFactory>();
         _mockAttestationService = new Mock<IAttestationService>();
-        
+
         // Setup mock HTTP client
         var mockHttpMessageHandler = new Mock<HttpMessageHandler>();
         var httpClient = new HttpClient(mockHttpMessageHandler.Object);

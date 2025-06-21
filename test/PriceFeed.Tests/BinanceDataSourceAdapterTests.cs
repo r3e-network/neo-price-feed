@@ -405,7 +405,7 @@ namespace PriceFeed.Tests
             // Act & Assert
             var exception = await Assert.ThrowsAsync<JsonException>(() =>
                 specialAdapter.GetPriceDataAsync(symbols.First()));
-                
+
             // Verify the exception message contains information about the JSON parsing error
             Assert.NotNull(exception);
         }

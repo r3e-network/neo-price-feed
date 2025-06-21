@@ -274,18 +274,18 @@ namespace PriceFeed.Tests
             _batchProcessingServiceMock.Verify(
                 s => s.ProcessBatchAsync(It.IsAny<PriceBatch>()),
                 Times.Once);
-            
+
             // Verify the batch contains the expected data
             Assert.NotNull(capturedBatch);
             Assert.Equal(2, capturedBatch.Prices.Count); // Should have BTC and ETH
-            
+
             // Verify BTC price
             var btcPrice = capturedBatch.Prices.FirstOrDefault(p => p.Symbol == "BTCUSDT");
             Assert.NotNull(btcPrice);
             // The aggregated price should be the average of all sources
             // (50000 + 50500 + 50200 + 50300) / 4 = 50250
             Assert.Equal(50250m, btcPrice.Price);
-            
+
             // Verify ETH price
             var ethPrice = capturedBatch.Prices.FirstOrDefault(p => p.Symbol == "ETHUSDT");
             Assert.NotNull(ethPrice);

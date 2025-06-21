@@ -402,7 +402,7 @@ public class BatchProcessingService : IBatchProcessingService, IDisposable
 
             // Parse the transaction JSON to a Neo transaction object
             var transactionData = Newtonsoft.Json.JsonConvert.DeserializeObject<dynamic>(transaction);
-            
+
             // Create Neo KeyPairs from the WIF private keys
             var teeKeyPair = new Neo.Wallets.KeyPair(Neo.Wallets.Wallet.GetPrivateKeyFromWIF(_options.TeeAccountPrivateKey));
             var masterKeyPair = new Neo.Wallets.KeyPair(Neo.Wallets.Wallet.GetPrivateKeyFromWIF(_options.MasterAccountPrivateKey));
@@ -461,7 +461,7 @@ public class BatchProcessingService : IBatchProcessingService, IDisposable
 
             // Add witnesses to the transaction
             neoTransaction.Witnesses = witnesses.ToArray();
-            
+
             // Note: In production, you would properly sign the transaction using ContractParametersContext
             // or the Neo SDK's transaction signing methods
 

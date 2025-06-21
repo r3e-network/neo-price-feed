@@ -25,7 +25,7 @@ public class ErrorHandlingService : IErrorHandlingService
         var metrics = _errorMetrics.GetOrAdd(operation, _ => new ErrorMetrics());
         metrics.RecordError();
 
-        _logger.LogError(exception, "Error in operation {Operation}. Error count in last {Window} minutes: {ErrorCount}", 
+        _logger.LogError(exception, "Error in operation {Operation}. Error count in last {Window} minutes: {ErrorCount}",
             operation, _metricsWindow.TotalMinutes, metrics.GetRecentErrorCount(_metricsWindow));
 
         return !metrics.IsThresholdExceeded(_metricsWindow);
