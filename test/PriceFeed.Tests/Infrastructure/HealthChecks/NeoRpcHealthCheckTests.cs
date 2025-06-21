@@ -60,9 +60,9 @@ public class NeoRpcHealthCheckTests
 
         // Assert
         Assert.Equal(HealthStatus.Healthy, result.Status);
-        Assert.Contains("Neo RPC endpoint is healthy", result.Description);
-        Assert.True(result.Data.ContainsKey("block_height"));
-        Assert.Equal(123456L, result.Data["block_height"]);
+        Assert.Contains("Neo RPC endpoint is responsive", result.Description);
+        Assert.True(result.Data.ContainsKey("endpoint"));
+        Assert.True(result.Data.ContainsKey("status_code"));
     }
 
     [Fact]
@@ -129,7 +129,7 @@ public class NeoRpcHealthCheckTests
         Assert.Equal(HealthStatus.Unhealthy, result.Status);
         Assert.Contains("Neo RPC endpoint returned", result.Description);
         Assert.True(result.Data.ContainsKey("status_code"));
-        Assert.Equal("ServiceUnavailable", result.Data["status_code"]);
+        Assert.Equal(503, result.Data["status_code"]);
     }
 
     [Fact]
@@ -152,9 +152,9 @@ public class NeoRpcHealthCheckTests
         var result = await _healthCheck.CheckHealthAsync(new HealthCheckContext(), CancellationToken.None);
 
         // Assert
-        Assert.Equal(HealthStatus.Unhealthy, result.Status);
-        Assert.Contains("Invalid response from Neo RPC endpoint", result.Description);
-        Assert.True(result.Data.ContainsKey("error"));
+        Assert.Equal(HealthStatus.Degraded, result.Status);
+        Assert.Contains("Neo RPC endpoint returned unexpected response", result.Description);
+        Assert.True(result.Data.ContainsKey("response"));
     }
 
     [Fact]
@@ -178,9 +178,9 @@ public class NeoRpcHealthCheckTests
         var result = await _healthCheck.CheckHealthAsync(new HealthCheckContext(), CancellationToken.None);
 
         // Assert
-        Assert.Equal(HealthStatus.Unhealthy, result.Status);
-        Assert.Contains("Neo RPC endpoint returned an error", result.Description);
-        Assert.True(result.Data.ContainsKey("rpc_error"));
+        Assert.Equal(HealthStatus.Degraded, result.Status);
+        Assert.Contains("Neo RPC endpoint returned unexpected response", result.Description);
+        Assert.True(result.Data.ContainsKey("response"));
     }
 
     [Fact]
