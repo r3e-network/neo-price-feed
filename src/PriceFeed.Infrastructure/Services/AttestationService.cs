@@ -4,6 +4,7 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Configuration;
 using Newtonsoft.Json;
 using PriceFeed.Core.Interfaces;
 using PriceFeed.Core.Models;
@@ -16,14 +17,17 @@ namespace PriceFeed.Infrastructure.Services
     public class AttestationService : IAttestationService
     {
         private readonly ILogger<AttestationService> _logger;
+        private readonly string _baseAttestationDirectory;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="AttestationService"/> class
         /// </summary>
         /// <param name="logger">The logger</param>
-        public AttestationService(ILogger<AttestationService> logger)
+        /// <param name="configuration">Optional configuration for attestation settings</param>
+        public AttestationService(ILogger<AttestationService> logger, IConfiguration? configuration = null)
         {
             _logger = logger;
+            _baseAttestationDirectory = configuration?.GetSection("AttestationSettings:BaseDirectory").Value ?? "attestations";
         }
 
         /// <summary>
@@ -202,7 +206,7 @@ namespace PriceFeed.Infrastructure.Services
 
                 // Save attestation to file (with date-based naming for retention)
                 var dateStr = DateTime.UtcNow.ToString("yyyyMMdd_HHmmss");
-                var attestationPath = Path.Combine("attestations", "price_feed", $"attestation_{dateStr}_{batch.BatchId}.json");
+                var attestationPath = Path.Combine(_baseAttestationDirectory, "price_feed", $"attestation_{dateStr}_{batch.BatchId}.json");
 
                 // Ensure directory exists
                 Directory.CreateDirectory(Path.GetDirectoryName(attestationPath)!);
@@ -295,7 +299,7 @@ namespace PriceFeed.Infrastructure.Services
             {
                 _logger.LogInformation("Cleaning up price feed attestations older than {RetentionDays} days", retentionDays);
 
-                var attestationDir = Path.Combine("attestations", "price_feed");
+                var attestationDir = Path.Combine(_baseAttestationDirectory, "price_feed");
                 if (!Directory.Exists(attestationDir))
                 {
                     return Task.FromResult(0);
