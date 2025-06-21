@@ -4,6 +4,7 @@ on:
   schedule:
     # Run once per week on Monday at 00:00 UTC
     - cron: '0 0 * * 1'
+  workflow_dispatch:  # Allow manual triggering
 
 jobs:
   run-price-feed:
@@ -14,12 +15,20 @@ jobs:
 
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
 
     - name: Setup .NET
-      uses: actions/setup-dotnet@v3
+      uses: actions/setup-dotnet@v4
       with:
         dotnet-version: 9.0.x
+
+    - name: Cache NuGet packages
+      uses: actions/cache@v3
+      with:
+        path: ~/.nuget/packages
+        key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj') }}
+        restore-keys: |
+          ${{ runner.os }}-nuget-
 
     - name: Restore dependencies
       run: dotnet restore
@@ -33,7 +42,7 @@ jobs:
         mkdir -p attestations
 
         # Run the price feed service
-        dotnet run --project PriceFeed.Console/PriceFeed.Console.csproj --configuration Release
+        dotnet run --project src/PriceFeed.Console/PriceFeed.Console.csproj --configuration Release
       env:
         BINANCE_API_KEY: ${{ secrets.BINANCE_API_KEY }}
         BINANCE_API_SECRET: ${{ secrets.BINANCE_API_SECRET }}
@@ -52,8 +61,13 @@ jobs:
         SYMBOLS: "NEOBTC,NEOUSDT,BTCUSDT,FLMUSDT"
 
     - name: Upload Price Feed Attestations
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v4
       with:
         name: price-feed-attestations
         path: attestations/
         retention-days: 30  # Keep attestations for 30 days
+
+    - name: Generate Build Attestation
+      uses: actions/attest-build-provenance@v1
+      with:
+        subject-path: src/PriceFeed.Console/bin/Release/net9.0/PriceFeed.Console.dll

@@ -20,9 +20,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\PriceFeed.Core\PriceFeed.Core.csproj" />
-    <ProjectReference Include="..\PriceFeed.Infrastructure\PriceFeed.Infrastructure.csproj" />
-    <ProjectReference Include="..\PriceFeed.Console\PriceFeed.Console.csproj" />
+    <ProjectReference Include="..\..\src\PriceFeed.Core\PriceFeed.Core.csproj" />
+    <ProjectReference Include="..\..\src\PriceFeed.Infrastructure\PriceFeed.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\src\PriceFeed.Console\PriceFeed.Console.csproj" />
   </ItemGroup>
 
 </Project>

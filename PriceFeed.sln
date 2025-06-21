@@ -3,16 +3,19 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.0.31903.59
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PriceFeed.Core", "PriceFeed.Core\PriceFeed.Core.csproj", "{A84F6A4A-4706-4E75-92D0-1EB6DDE6AC74}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PriceFeed.Infrastructure", "PriceFeed.Infrastructure\PriceFeed.Infrastructure.csproj", "{02D36534-E3A6-4784-AE56-32683F6874BD}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "test", "test", "{8BC9CEB8-8B4A-11D0-8D12-00A0C91BC942}"
 EndProject
-
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PriceFeed.Contracts", "PriceFeed.Contracts\PriceFeed.Contracts.csproj", "{FA95B2F3-C395-4E1B-AD41-B935568BF891}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PriceFeed.Core", "src\PriceFeed.Core\PriceFeed.Core.csproj", "{A84F6A4A-4706-4E75-92D0-1EB6DDE6AC74}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PriceFeed.Tests", "PriceFeed.Tests\PriceFeed.Tests.csproj", "{BED78F79-9E78-4C4F-BB61-6B76EDEF5A34}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PriceFeed.Infrastructure", "src\PriceFeed.Infrastructure\PriceFeed.Infrastructure.csproj", "{02D36534-E3A6-4784-AE56-32683F6874BD}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PriceFeed.Console", "PriceFeed.Console\PriceFeed.Console.csproj", "{123B7BC3-9576-42B0-9F8C-E97D4ECDF9D5}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PriceFeed.Console", "src\PriceFeed.Console\PriceFeed.Console.csproj", "{123B7BC3-9576-42B0-9F8C-E97D4ECDF9D5}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PriceFeed.Contracts", "src\PriceFeed.Contracts\PriceFeed.Contracts.csproj", "{FA95B2F3-C395-4E1B-AD41-B935568BF891}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PriceFeed.Tests", "test\PriceFeed.Tests\PriceFeed.Tests.csproj", "{BED78F79-9E78-4C4F-BB61-6B76EDEF5A34}"
 EndProject
 
 Global
@@ -22,6 +25,13 @@ Global
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{A84F6A4A-4706-4E75-92D0-1EB6DDE6AC74} = {8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}
+		{02D36534-E3A6-4784-AE56-32683F6874BD} = {8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}
+		{123B7BC3-9576-42B0-9F8C-E97D4ECDF9D5} = {8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}
+		{FA95B2F3-C395-4E1B-AD41-B935568BF891} = {8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}
+		{BED78F79-9E78-4C4F-BB61-6B76EDEF5A34} = {8BC9CEB8-8B4A-11D0-8D12-00A0C91BC942}
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
 		{A84F6A4A-4706-4E75-92D0-1EB6DDE6AC74}.Debug|Any CPU.ActiveCfg = Debug|Any CPU

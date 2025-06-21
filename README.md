@@ -70,21 +70,28 @@ A Neo N3 smart contract that stores price data on the blockchain and makes it av
 
 ## Project Structure
 
+```
+neo-price-feed/
+├── src/                          # Source code
+│   ├── PriceFeed.Core/          # Domain models and interfaces
+│   ├── PriceFeed.Infrastructure/ # External integrations and services
+│   ├── PriceFeed.Console/       # Console application entry point
+│   └── PriceFeed.Contracts/     # Smart contracts
+├── test/                        # Test projects
+│   └── PriceFeed.Tests/         # Unit and integration tests
+├── docs/                        # Documentation
+├── scripts/                     # Build and deployment scripts
+├── config/                      # Configuration templates
+└── .github/                     # GitHub workflows and templates
+```
+
+### Components
+
 - **PriceFeed.Core**: Contains domain models, interfaces, and core business logic
 - **PriceFeed.Infrastructure**: Contains implementations of data sources, services, and external integrations
-- **PriceFeed.Console**: The console application that runs in GitHub Actions
+- **PriceFeed.Console**: The console application that runs in the TEE
 - **PriceFeed.Contracts**: Contains the Neo N3 smart contract for the price oracle
-- **PriceFeed.Tests**: Contains unit tests for the solution
-
-## Architecture
-
-The solution is structured into the following projects:
-
-- **PriceFeed.Core**: Contains domain models and interfaces
-- **PriceFeed.Infrastructure**: Implements data source adapters and services
-- **PriceFeed.Console**: Console application that runs in the TEE
-- **PriceFeed.Contracts**: Contains the Neo smart contract
-- **PriceFeed.Tests**: Contains unit tests
+- **PriceFeed.Tests**: Contains comprehensive unit and integration tests
 
 ### System Architecture
 
@@ -187,7 +194,7 @@ Alternatively, you can use the `appsettings.json` file for local development:
 
 ```bash
 # Run the price feed service
-cd PriceFeed.Console
+cd src/PriceFeed.Console
 dotnet run
 
 # Test symbol mappings
@@ -263,7 +270,7 @@ The solution includes a production-ready Neo N3 smart contract (`PriceOracleCont
 - Has a pause mechanism for emergencies
 - Validates data quality through confidence scores
 
-For detailed information about the smart contract, see the [contract documentation](PriceFeed.Contracts/README.md).
+For detailed information about the smart contract, see the [contract documentation](src/PriceFeed.Contracts/README.md).
 
 ## GitHub Actions Workflow
 
@@ -301,7 +308,7 @@ jobs:
       run: dotnet build --configuration Release --no-restore
 
     - name: Run Price Feed
-      run: dotnet run --project PriceFeed.Console/PriceFeed.Console.csproj --configuration Release
+      run: dotnet run --project src/PriceFeed.Console/PriceFeed.Console.csproj --configuration Release
       env:
         BINANCE_API_KEY: ${{ secrets.BINANCE_API_KEY }}
         BINANCE_API_SECRET: ${{ secrets.BINANCE_API_SECRET }}
