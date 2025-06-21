@@ -68,9 +68,9 @@ public class PriceFeedOptions
         if (symbol.Length < 3 || symbol.Length > 10)
             return false;
 
-        // Check characters - commented out for testing
-        // if (!symbol.All(c => char.IsLetterOrDigit(c)))
-        //    return false;
+        // Check characters - only alphanumeric allowed
+        if (!symbol.All(c => char.IsLetterOrDigit(c)))
+            return false;
 
         // Check for known valid patterns (e.g., BTCUSDT, ETHBTC)
         // This is a basic check - in production, you might want a more comprehensive validation

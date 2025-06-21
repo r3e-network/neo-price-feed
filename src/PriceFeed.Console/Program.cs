@@ -18,16 +18,23 @@ using PriceFeed.Core.Options;
 using PriceFeed.Console;
 using PriceFeed.Infrastructure.DataSources;
 using PriceFeed.Infrastructure.Services;
+using PriceFeed.Infrastructure.HealthChecks;
+using PriceFeed.Core.Validation;
 using Serilog;
 using Serilog.Events;
+using Serilog.Formatting.Compact;
+using OpenTelemetry.Trace;
+using OpenTelemetry.Metrics;
+using OpenTelemetry.Resources;
 
-// Configure Serilog
+// Configure Serilog with structured logging
 Log.Logger = new LoggerConfiguration()
     .MinimumLevel.Information()
     .MinimumLevel.Override("Microsoft", LogEventLevel.Warning)
     .Enrich.FromLogContext()
     .Enrich.WithProperty("Application", "PriceFeed")
-    .WriteTo.Console(outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3}] {Message:lj}{NewLine}{Exception}")
+    .Enrich.WithEnvironmentName()
+    .WriteTo.Console(new CompactJsonFormatter())
     .CreateLogger();
 
 try
@@ -111,27 +118,42 @@ try
         })
         .ConfigureServices((hostContext, services) =>
         {
-            // Configure options
+            // Configure options with validation
             services.Configure<PriceFeedOptions>(hostContext.Configuration.GetSection("PriceFeed"));
             services.Configure<BinanceOptions>(hostContext.Configuration.GetSection("Binance"));
             services.Configure<CoinMarketCapOptions>(hostContext.Configuration.GetSection("CoinMarketCap"));
             services.Configure<CoinbaseOptions>(hostContext.Configuration.GetSection("Coinbase"));
             services.Configure<OKExOptions>(hostContext.Configuration.GetSection("OKEx"));
             services.Configure<BatchProcessingOptions>(hostContext.Configuration.GetSection("BatchProcessing"));
+            
+            // Add options validation
+            services.AddSingleton<IValidateOptions<BatchProcessingOptions>, BatchProcessingOptionsValidator>();
+            services.AddSingleton<IValidateOptions<BinanceOptions>, BinanceOptionsValidator>();
+            services.AddSingleton<IValidateOptions<CoinMarketCapOptions>, CoinMarketCapOptionsValidator>();
+            services.AddSingleton<IValidateOptions<CoinbaseOptions>, CoinbaseOptionsValidator>();
+            services.AddSingleton<IValidateOptions<OKExOptions>, OKExOptionsValidator>();
 
-            // Register HTTP clients
+            // Add memory cache
+            services.AddMemoryCache();
+            
+            // Register HTTP clients with resilience policies
             services.AddHttpClient();
 
-            // Configure Binance HTTP client
+            // Configure Binance HTTP client with Polly
             services.AddHttpClient("Binance", (serviceProvider, client) =>
             {
                 var options = serviceProvider.GetRequiredService<IOptions<BinanceOptions>>().Value;
                 client.BaseAddress = new Uri(options.BaseUrl);
                 client.DefaultRequestHeaders.Add("Accept", "application/json");
                 client.Timeout = TimeSpan.FromSeconds(options.TimeoutSeconds);
+            })
+            .AddPolicyHandler((serviceProvider, request) =>
+            {
+                var logger = serviceProvider.GetRequiredService<ILogger<Program>>();
+                return ResiliencePolicies.GetCombinedPolicy(logger, "Binance");
             });
 
-            // Configure CoinMarketCap HTTP client
+            // Configure CoinMarketCap HTTP client with Polly
             services.AddHttpClient("CoinMarketCap", (serviceProvider, client) =>
             {
                 var options = serviceProvider.GetRequiredService<IOptions<CoinMarketCapOptions>>().Value;
@@ -142,18 +164,28 @@ try
                 {
                     client.DefaultRequestHeaders.Add("X-CMC_PRO_API_KEY", options.ApiKey);
                 }
+            })
+            .AddPolicyHandler((serviceProvider, request) =>
+            {
+                var logger = serviceProvider.GetRequiredService<ILogger<Program>>();
+                return ResiliencePolicies.GetCombinedPolicy(logger, "CoinMarketCap");
             });
 
-            // Configure Coinbase HTTP client
+            // Configure Coinbase HTTP client with Polly
             services.AddHttpClient("Coinbase", (serviceProvider, client) =>
             {
                 var options = serviceProvider.GetRequiredService<IOptions<CoinbaseOptions>>().Value;
                 client.BaseAddress = new Uri(options.BaseUrl);
                 client.DefaultRequestHeaders.Add("Accept", "application/json");
                 client.Timeout = TimeSpan.FromSeconds(options.TimeoutSeconds);
+            })
+            .AddPolicyHandler((serviceProvider, request) =>
+            {
+                var logger = serviceProvider.GetRequiredService<ILogger<Program>>();
+                return ResiliencePolicies.GetCombinedPolicy(logger, "Coinbase");
             });
 
-            // Configure OKEx HTTP client
+            // Configure OKEx HTTP client with Polly
             services.AddHttpClient("OKEx", (serviceProvider, client) =>
             {
                 var options = serviceProvider.GetRequiredService<IOptions<OKExOptions>>().Value;
@@ -164,12 +196,22 @@ try
                 {
                     client.DefaultRequestHeaders.Add("OK-ACCESS-KEY", options.ApiKey);
                 }
+            })
+            .AddPolicyHandler((serviceProvider, request) =>
+            {
+                var logger = serviceProvider.GetRequiredService<ILogger<Program>>();
+                return ResiliencePolicies.GetCombinedPolicy(logger, "OKEx");
             });
 
-            // Configure Neo HTTP client
+            // Configure Neo HTTP client with Polly
             services.AddHttpClient("Neo", client =>
             {
                 client.DefaultRequestHeaders.Add("Accept", "application/json");
+            })
+            .AddPolicyHandler((serviceProvider, request) =>
+            {
+                var logger = serviceProvider.GetRequiredService<ILogger<Program>>();
+                return ResiliencePolicies.GetCombinedPolicy(logger, "Neo", 30);
             });
 
             // Register data source adapters
@@ -196,6 +238,29 @@ try
             rateLimiter.Configure("Coinbase", 5); // 5 requests per second
             rateLimiter.Configure("OKEx", 5); // 5 requests per second
 
+            // Add health checks
+            services.AddHealthChecks()
+                .AddCheck<DataSourceHealthCheck>("data_sources", tags: new[] { "ready" })
+                .AddCheck<NeoRpcHealthCheck>("neo_rpc", tags: new[] { "ready" });
+            
+            // Add OpenTelemetry
+            services.AddOpenTelemetry()
+                .ConfigureResource(resource => resource
+                    .AddService("PriceFeed")
+                    .AddAttributes(new Dictionary<string, object>
+                    {
+                        { "environment", hostContext.HostingEnvironment.EnvironmentName },
+                        { "version", Assembly.GetExecutingAssembly().GetName().Version?.ToString() ?? "unknown" }
+                    }))
+                .WithTracing(tracing => tracing
+                    .AddSource("PriceFeed")
+                    .AddHttpClientInstrumentation()
+                    .AddConsoleExporter())
+                .WithMetrics(metrics => metrics
+                    .AddMeter("PriceFeed")
+                    .AddHttpClientInstrumentation()
+                    .AddConsoleExporter());
+            
             // Register the main job
             services.AddTransient<PriceFeedJob>();
         })
@@ -568,29 +633,38 @@ public class PriceFeedJob
                 enabledAdapters.Count,
                 string.Join(", ", enabledAdapters.Select(a => a.SourceName)));
 
-            foreach (var adapter in enabledAdapters)
+            // Parallelize data collection from all sources
+            var dataCollectionTasks = enabledAdapters.Select(async adapter =>
             {
                 try
                 {
                     _logger.LogInformation("Collecting price data from {Source}", adapter.SourceName);
                     var priceData = await adapter.GetPriceDataBatchAsync(_options.Symbols);
-
-                    foreach (var data in priceData)
-                    {
-                        if (!priceDataBySymbol.ContainsKey(data.Symbol))
-                        {
-                            priceDataBySymbol[data.Symbol] = new List<PriceData>();
-                        }
-
-                        priceDataBySymbol[data.Symbol].Add(data);
-                    }
-
                     _logger.LogInformation("Collected {Count} price data points from {Source}",
                         priceData.Count(), adapter.SourceName);
+                    return (adapter.SourceName, priceData);
                 }
                 catch (Exception ex)
                 {
                     _logger.LogError(ex, "Error collecting price data from {Source}", adapter.SourceName);
+                    return (adapter.SourceName, Enumerable.Empty<PriceData>());
+                }
+            });
+
+            // Wait for all data sources to complete
+            var results = await Task.WhenAll(dataCollectionTasks);
+
+            // Process results
+            foreach (var (sourceName, priceDataList) in results)
+            {
+                foreach (var data in priceDataList)
+                {
+                    if (!priceDataBySymbol.ContainsKey(data.Symbol))
+                    {
+                        priceDataBySymbol[data.Symbol] = new List<PriceData>();
+                    }
+
+                    priceDataBySymbol[data.Symbol].Add(data);
                 }
             }
 
