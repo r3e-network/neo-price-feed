@@ -39,7 +39,7 @@ try
     if (commandLineArgs.Contains("--generate-account"))
     {
         // Check if secure output is requested
-        string secureOutputPath = null;
+        string? secureOutputPath = null;
         for (int i = 0; i < commandLineArgs.Length - 1; i++)
         {
             if (commandLineArgs[i] == "--secure-output")
@@ -49,7 +49,7 @@ try
             }
         }
 
-        GenerateNeoAccount(secureOutputPath);
+        GenerateNeoAccount(secureOutputPath!);
         return 0;
     }
 
@@ -57,7 +57,7 @@ try
     if (commandLineArgs.Contains("--create-account-attestation"))
     {
         // Get the account address from command line
-        string accountAddress = null;
+        string? accountAddress = null;
         for (int i = 0; i < commandLineArgs.Length - 1; i++)
         {
             if (commandLineArgs[i] == "--account-address")
@@ -274,7 +274,7 @@ static void CheckSensitiveEnvironmentVariables()
 /// Generates a new Neo TEE account and outputs the address and WIF
 /// </summary>
 /// <param name="secureOutputPath">Optional path to write the account information to a file instead of stdout</param>
-static void GenerateNeoAccount(string secureOutputPath = null)
+static void GenerateNeoAccount(string? secureOutputPath = null)
 {
     try
     {
