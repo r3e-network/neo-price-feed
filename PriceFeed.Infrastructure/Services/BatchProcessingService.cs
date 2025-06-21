@@ -232,6 +232,16 @@ public class BatchProcessingService : IBatchProcessingService, IDisposable
 
             return true;
         }
+        catch (ArgumentException)
+        {
+            // Re-throw validation exceptions
+            throw;
+        }
+        catch (InvalidOperationException)
+        {
+            // Re-throw configuration exceptions
+            throw;
+        }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error processing batch {BatchId}", batch.BatchId);

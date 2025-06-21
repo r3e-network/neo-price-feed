@@ -42,8 +42,10 @@ namespace PriceFeed.Tests
             {
                 RpcEndpoint = "https://example.com/rpc",
                 ContractScriptHash = "0x1234567890abcdef",
-                AccountAddress = "NeoAddress123",
-                AccountPrivateKey = "PrivateKey123",
+                TeeAccountAddress = "NeoAddress123",
+                TeeAccountPrivateKey = "KxDgvEKzgSBPPfuVfw67oPQBSjidEiqTHURKSDL1R7yGaGYAeYnr",
+                MasterAccountAddress = "NeoAddress456",
+                MasterAccountPrivateKey = "KxDgvEKzgSBPPfuVfw67oPQBSjidEiqTHURKSDL1R7yGaGYAeYnr",
                 MaxBatchSize = 50
             });
         }
@@ -313,7 +315,7 @@ namespace PriceFeed.Tests
         }
 
         [Fact]
-        public async Task ProcessBatchAsync_WithEmptyBatch_ShouldReturnTrue()
+        public async Task ProcessBatchAsync_WithEmptyBatch_ShouldThrowException()
         {
             // Arrange
             var batch = new PriceBatch
@@ -323,11 +325,8 @@ namespace PriceFeed.Tests
 
             var service = new BatchProcessingService(_loggerMock.Object, _optionsMock.Object, _httpClientFactoryMock.Object, _attestationServiceMock.Object);
 
-            // Act
-            var result = await service.ProcessBatchAsync(batch);
-
-            // Assert
-            Assert.True(result);
+            // Act & Assert
+            await Assert.ThrowsAsync<ArgumentException>(async () => await service.ProcessBatchAsync(batch));
 
             // Verify that SendAsync was not called
             _httpMessageHandlerMock
