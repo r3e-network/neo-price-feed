@@ -197,6 +197,7 @@ public class ResiliencePoliciesTests
             "TestOperation",
             async (ct) =>
             {
+                await Task.CompletedTask;
                 fallbackExecuted = true;
                 return "Fallback Value";
             });
@@ -231,6 +232,7 @@ public class ResiliencePoliciesTests
             "TestOperation",
             async (ct) =>
             {
+                await Task.CompletedTask;
                 fallbackExecuted = true;
                 return "Fallback Value";
             });
