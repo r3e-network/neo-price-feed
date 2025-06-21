@@ -129,8 +129,11 @@ The application can be configured using environment variables in the TEE:
 
 **Neo Blockchain Configuration:**
 - `NEO_RPC_ENDPOINT`: Neo RPC endpoint URL
-- `NEO_CONTRACT_HASH`: Script hash of the deployed contract
-- `NEO_WALLET_WIF`: WIF of the wallet to use for signing transactions
+- `CONTRACT_SCRIPT_HASH`: Script hash of the deployed contract
+- `TEE_ACCOUNT_ADDRESS`: TEE account address
+- `TEE_ACCOUNT_PRIVATE_KEY`: TEE account private key (WIF format)
+- `MASTER_ACCOUNT_ADDRESS`: Master account address
+- `MASTER_ACCOUNT_PRIVATE_KEY`: Master account private key (WIF format)
 
 **General Configuration:**
 - `SYMBOLS`: Comma-separated list of symbols to collect price data for (e.g., "BTCUSDT,ETHUSDT,NEOUSDT")
@@ -171,8 +174,8 @@ Alternatively, you can use the `appsettings.json` file for local development:
   },
   "BatchProcessing": {
     "RpcEndpoint": "http://localhost:10332",
-    "ContractScriptHash": "0xd2a4cff31913016155e38e474a2c06d08be276cf",
-    "WalletWif": "KxDgvEKzgSBPPfuVfw67oPQBSjidEiqTHURKSDL1R7yGaGYAeYnr",
+    "ContractScriptHash": "MUST_BE_SET_TO_YOUR_DEPLOYED_CONTRACT_HASH",
+    "WalletWif": "MUST_BE_SET_VIA_ENVIRONMENT_VARIABLE",
     "MaxBatchSize": 50
   }
 }
@@ -309,10 +312,11 @@ jobs:
         OKEX_API_SECRET: ${{ secrets.OKEX_API_SECRET }}
         OKEX_PASSPHRASE: ${{ secrets.OKEX_PASSPHRASE }}
         NEO_RPC_ENDPOINT: ${{ secrets.NEO_RPC_ENDPOINT }}
-        NEO_CONTRACT_HASH: ${{ secrets.NEO_CONTRACT_HASH }}
-        NEO_ACCOUNT_ADDRESS: ${{ secrets.NEO_ACCOUNT_ADDRESS }}
-        NEO_ACCOUNT_PRIVATE_KEY: ${{ secrets.NEO_ACCOUNT_PRIVATE_KEY }}
-        NEO_MASTER_ACCOUNT_PRIVATE_KEY: ${{ secrets.NEO_MASTER_ACCOUNT_PRIVATE_KEY }}
+        CONTRACT_SCRIPT_HASH: ${{ secrets.CONTRACT_SCRIPT_HASH }}
+        TEE_ACCOUNT_ADDRESS: ${{ secrets.TEE_ACCOUNT_ADDRESS }}
+        TEE_ACCOUNT_PRIVATE_KEY: ${{ secrets.TEE_ACCOUNT_PRIVATE_KEY }}
+        MASTER_ACCOUNT_ADDRESS: ${{ secrets.MASTER_ACCOUNT_ADDRESS }}
+        MASTER_ACCOUNT_PRIVATE_KEY: ${{ secrets.MASTER_ACCOUNT_PRIVATE_KEY }}
         SYMBOLS: "NEOBTC,NEOUSDT,BTCUSDT,FLMUSDT"
 ```
 

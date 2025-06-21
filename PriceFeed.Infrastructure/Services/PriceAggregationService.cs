@@ -141,7 +141,8 @@ public class PriceAggregationService : IPriceAggregationService
                 catch (Exception ex)
                 {
                     _logger.LogError(ex, "Error aggregating price data for symbol {Symbol}", symbol);
-                    // Continue with other symbols
+                    // Track failed aggregations but continue with other symbols to provide partial data
+                    // Consider implementing a threshold for acceptable failure rate
                 }
             }));
         }

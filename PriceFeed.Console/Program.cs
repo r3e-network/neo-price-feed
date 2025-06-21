@@ -7,6 +7,10 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Neo;
+using Neo.Cryptography.ECC;
+using Neo.SmartContract;
+using Neo.Wallets;
 using Newtonsoft.Json;
 using PriceFeed.Core.Interfaces;
 using PriceFeed.Core.Models;
@@ -276,26 +280,26 @@ static void GenerateNeoAccount(string secureOutputPath = null)
     {
         Log.Information("Generating new Neo TEE account...");
 
-        // Generate a simulated Neo account for demonstration purposes
-        // Note: This is a simplified implementation for the TEE environment
+        // Generate a new Neo account using the official Neo SDK
+        // This creates a valid Neo N3 account with proper cryptographic keys
 
-        // Generate a random private key
+        // Generate a new private key
         byte[] privateKey = new byte[32];
         using (var rng = RandomNumberGenerator.Create())
         {
             rng.GetBytes(privateKey);
         }
 
-        // Convert to hex string (this is a simplified example)
-        string privateKeyHex = BitConverter.ToString(privateKey).Replace("-", "").ToLowerInvariant();
+        // Create a Neo KeyPair from the private key
+        var neoPrivateKey = new Neo.Wallets.KeyPair(privateKey);
 
-        // Derive a WIF (simplified example)
-        string wif = $"L{Convert.ToBase64String(privateKey).Substring(0, 22)}";
+        // Get the WIF (Wallet Import Format) - this is the standard format for Neo private keys
+        string wif = neoPrivateKey.Export();
 
-        // Derive an address (simplified example)
-        using var sha256 = SHA256.Create();
-        var addressBytes = sha256.ComputeHash(privateKey);
-        string address = $"N{Convert.ToBase64String(addressBytes).Substring(0, 22)}";
+        // Get the Neo address - this is derived from the public key using proper Neo address generation
+        var contract = Neo.SmartContract.Contract.CreateSignatureContract(neoPrivateKey.PublicKey);
+        var scriptHash = contract.ScriptHash;
+        string address = scriptHash.ToAddress(Neo.ProtocolSettings.Default.AddressVersion);
 
         // Output the account information
         if (!string.IsNullOrEmpty(secureOutputPath))

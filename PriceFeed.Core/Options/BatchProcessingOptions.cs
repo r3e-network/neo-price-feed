@@ -78,33 +78,33 @@ public class BatchProcessingOptions
             RpcEndpoint = rpcEndpoint;
         }
 
-        var contractHash = Environment.GetEnvironmentVariable("NEO_CONTRACT_HASH");
+        var contractHash = Environment.GetEnvironmentVariable("CONTRACT_SCRIPT_HASH");
         if (!string.IsNullOrEmpty(contractHash))
         {
             ContractScriptHash = contractHash;
         }
 
         // Get the TEE account credentials from environment variables
-        var teeAccountAddress = Environment.GetEnvironmentVariable("NEO_TEE_ACCOUNT_ADDRESS");
+        var teeAccountAddress = Environment.GetEnvironmentVariable("TEE_ACCOUNT_ADDRESS");
         if (!string.IsNullOrEmpty(teeAccountAddress))
         {
             TeeAccountAddress = teeAccountAddress;
         }
 
-        var teeAccountPrivateKey = Environment.GetEnvironmentVariable("NEO_TEE_ACCOUNT_PRIVATE_KEY");
+        var teeAccountPrivateKey = Environment.GetEnvironmentVariable("TEE_ACCOUNT_PRIVATE_KEY");
         if (!string.IsNullOrEmpty(teeAccountPrivateKey))
         {
             TeeAccountPrivateKey = teeAccountPrivateKey;
         }
 
         // Get the Master account credentials from environment variables
-        var masterAccountAddress = Environment.GetEnvironmentVariable("NEO_MASTER_ACCOUNT_ADDRESS");
+        var masterAccountAddress = Environment.GetEnvironmentVariable("MASTER_ACCOUNT_ADDRESS");
         if (!string.IsNullOrEmpty(masterAccountAddress))
         {
             MasterAccountAddress = masterAccountAddress;
         }
 
-        var masterAccountPrivateKey = Environment.GetEnvironmentVariable("NEO_MASTER_ACCOUNT_PRIVATE_KEY");
+        var masterAccountPrivateKey = Environment.GetEnvironmentVariable("MASTER_ACCOUNT_PRIVATE_KEY");
         if (!string.IsNullOrEmpty(masterAccountPrivateKey))
         {
             MasterAccountPrivateKey = masterAccountPrivateKey;

@@ -74,8 +74,8 @@ To set up the dual-signature transaction system:
    - Create a Neo account using a wallet of your choice
    - Fund this account with GAS for transaction fees
    - Securely provide the account address and private key to the TEE:
-     - `NEO_MASTER_ACCOUNT_ADDRESS`: The public address of the Master account
-     - `NEO_MASTER_ACCOUNT_PRIVATE_KEY`: The private key of the Master account
+     - `MASTER_ACCOUNT_ADDRESS`: The public address of the Master account
+     - `MASTER_ACCOUNT_PRIVATE_KEY`: The private key of the Master account
 
 3. **Configure Asset Transfer** (Optional):
    - By default, any assets in the TEE account will be transferred to the Master account

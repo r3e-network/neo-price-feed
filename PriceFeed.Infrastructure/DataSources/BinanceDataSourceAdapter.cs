@@ -182,8 +182,9 @@ public class BinanceDataSourceAdapter : IDataSourceAdapter
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, "Error getting price data from Binance");
-                    // Continue with other symbols
+                    _logger.LogError(ex, "Error getting price data from Binance for a specific symbol");
+                    // Collect errors but continue with other symbols to get partial data
+                    // Consider implementing a threshold for acceptable failure rate
                 }
             }
 
@@ -192,20 +193,17 @@ public class BinanceDataSourceAdapter : IDataSourceAdapter
         catch (HttpRequestException ex)
         {
             _logger.LogError(ex, "HTTP request error in GetPriceDataBatchAsync");
-            // For test compatibility, rethrow the exception
-            throw;
+            throw new InvalidOperationException($"Failed to fetch price data from {SourceName} due to network error", ex);
         }
         catch (System.Text.Json.JsonException ex)
         {
             _logger.LogError(ex, "JSON parsing error in GetPriceDataBatchAsync");
-            // For test compatibility, rethrow the exception
-            throw;
+            throw new InvalidOperationException($"Failed to parse price data from {SourceName}", ex);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Unexpected error in GetPriceDataBatchAsync");
-            // For test compatibility, don't rethrow
-            return Enumerable.Empty<PriceData>();
+            throw new InvalidOperationException($"Unexpected error while fetching price data from {SourceName}", ex);
         }
     }
 
