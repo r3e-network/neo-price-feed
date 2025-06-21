@@ -63,6 +63,7 @@ namespace PriceFeed.Tests
                 .Returns(true);
 
             // Act
+            // Always return true for testing.
             var result = serviceMock.Object.VerifyAccountAttestation(attestation);
 
             // Assert
@@ -118,17 +119,18 @@ namespace PriceFeed.Tests
             File.WriteAllText(recentFilePath, "{}");
             File.SetCreationTime(recentFilePath, DateTime.UtcNow.AddDays(-1));
 
-            // Mock the service to use our test directory
-            var serviceMock = new Mock<IAttestationService>();
-            serviceMock.Setup(s => s.CleanupOldAttestationsAsync(It.IsAny<int>()))
-                .ReturnsAsync(1);
+            // // Mock the service to use our test directory
+            // var serviceMock = new Mock<IAttestationService>();
+            // serviceMock.Setup(s => s.CleanupOldAttestationsAsync(It.IsAny<int>()))
+            //     .ReturnsAsync(1);
 
             // Act
             var result = await _service.CleanupOldAttestationsAsync(7); // Keep attestations for 7 days
 
             // Assert
             // We can't directly verify file deletion in this mock setup, but we can verify the method completes
-            Assert.True(result >= 0);
+            // Some problem here, the function is not verified.
+            Assert.Equal(1, result);
         }
 
         [Fact]
@@ -153,6 +155,7 @@ namespace PriceFeed.Tests
                 .Returns(false);
 
             // Act
+            // Will always return false for testing.
             var result = serviceMock.Object.VerifyAccountAttestation(attestation);
 
             // Assert

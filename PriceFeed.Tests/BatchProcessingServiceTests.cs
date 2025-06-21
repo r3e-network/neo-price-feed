@@ -67,6 +67,7 @@ namespace PriceFeed.Tests
             };
 
             // Mock HTTP response
+            // The response will be always successfull no matter what the input is.
             var responseContent = JsonConvert.SerializeObject(new
             {
                 jsonrpc = "2.0",

@@ -249,6 +249,12 @@ namespace PriceFeed.Tests
         public async Task RunAsync_WithValidResponses_ShouldProcessBatch()
         {
             // Arrange
+            PriceBatch capturedBatch = null;
+            _batchProcessingServiceMock
+                .Setup(s => s.ProcessBatchAsync(It.IsAny<PriceBatch>()))
+                .Callback<PriceBatch>(batch => capturedBatch = batch)
+                .ReturnsAsync(true);
+
             // Mock Binance responses
             MockBinanceResponses();
 
@@ -266,8 +272,26 @@ namespace PriceFeed.Tests
 
             // Assert
             _batchProcessingServiceMock.Verify(
-                s => s.ProcessBatchAsync(Moq.It.IsAny<PriceBatch>()),
+                s => s.ProcessBatchAsync(It.IsAny<PriceBatch>()),
                 Times.Once);
+            
+            // Verify the batch contains the expected data
+            Assert.NotNull(capturedBatch);
+            Assert.Equal(2, capturedBatch.Prices.Count); // Should have BTC and ETH
+            
+            // Verify BTC price
+            var btcPrice = capturedBatch.Prices.FirstOrDefault(p => p.Symbol == "BTCUSDT");
+            Assert.NotNull(btcPrice);
+            // The aggregated price should be the average of all sources
+            // (50000 + 50500 + 50200 + 50300) / 4 = 50250
+            Assert.Equal(50250m, btcPrice.Price);
+            
+            // Verify ETH price
+            var ethPrice = capturedBatch.Prices.FirstOrDefault(p => p.Symbol == "ETHUSDT");
+            Assert.NotNull(ethPrice);
+            // The aggregated price should be the average of all sources
+            // (3000 + 3050 + 3020 + 3030) / 4 = 3025
+            Assert.Equal(3025m, ethPrice.Price);
         }
 
         private void MockBinanceResponses()
