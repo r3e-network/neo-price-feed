@@ -168,7 +168,7 @@ public class BatchProcessingService : IBatchProcessingService, IDisposable
                 }
 
                 // Check if the transaction state is FAULT
-                if (responseObject?.result?.state != null && responseObject.result.state.ToString() == "FAULT")
+                if (responseObject?.result?.state != null && responseObject.result.state!.ToString() == "FAULT")
                 {
                     string exception = responseObject.result.exception?.ToString() ?? "unknown";
                     _logger.LogError("Transaction execution failed: {Exception}", exception);
@@ -412,7 +412,7 @@ public class BatchProcessingService : IBatchProcessingService, IDisposable
             {
                 Version = 0,
                 Nonce = (uint)new Random().Next(),
-                SystemFee = transactionData.systemFee != null ? (long)transactionData.systemFee : 0,
+                SystemFee = transactionData.systemFee != null ? (long)transactionData.systemFee! : 0,
                 NetworkFee = transactionData.networkFee != null ? (long)transactionData.networkFee : 0,
                 ValidUntilBlock = transactionData.validUntilBlock != null ? (uint)transactionData.validUntilBlock : 0,
                 Attributes = Array.Empty<Neo.Network.P2P.Payloads.TransactionAttribute>(),

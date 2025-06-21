@@ -12,33 +12,33 @@ namespace PriceFeed.Core.Models
         /// <summary>
         /// The type of attestation
         /// </summary>
-        public string AttestationType { get; set; }
+        public required string AttestationType { get; set; }
 
         /// <summary>
         /// The GitHub repository (owner/name)
         /// </summary>
-        public string GitHubRepository { get; set; }
+        public required string GitHubRepository { get; set; }
 
         /// <summary>
         /// The GitHub workflow name
         /// </summary>
-        public string GitHubWorkflow { get; set; }
+        public required string GitHubWorkflow { get; set; }
 
         /// <summary>
         /// The GitHub run ID
         /// </summary>
-        public string GitHubRunId { get; set; }
+        public required string GitHubRunId { get; set; }
 
         /// <summary>
         /// The GitHub run number
         /// </summary>
-        public string GitHubRunNumber { get; set; }
+        public required string GitHubRunNumber { get; set; }
 
         /// <summary>
         /// The signature of the attestation
         /// </summary>
         [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
-        public string Signature { get; set; }
+        public required string Signature { get; set; }
     }
 
     /// <summary>
@@ -49,12 +49,12 @@ namespace PriceFeed.Core.Models
         /// <summary>
         /// The Neo account address
         /// </summary>
-        public string AccountAddress { get; set; }
+        public required string AccountAddress { get; set; }
 
         /// <summary>
         /// The Neo account public key
         /// </summary>
-        public string AccountPublicKey { get; set; }
+        public required string AccountPublicKey { get; set; }
 
         /// <summary>
         /// The timestamp when the account was created
@@ -107,12 +107,12 @@ namespace PriceFeed.Core.Models
         /// <summary>
         /// The batch ID
         /// </summary>
-        public string BatchId { get; set; }
+        public required string BatchId { get; set; }
 
         /// <summary>
         /// The transaction hash
         /// </summary>
-        public string TransactionHash { get; set; }
+        public required string TransactionHash { get; set; }
 
         /// <summary>
         /// The number of prices in the batch
@@ -169,7 +169,7 @@ namespace PriceFeed.Core.Models
         /// <summary>
         /// The symbol
         /// </summary>
-        public string Symbol { get; set; }
+        public required string Symbol { get; set; }
 
         /// <summary>
         /// The price

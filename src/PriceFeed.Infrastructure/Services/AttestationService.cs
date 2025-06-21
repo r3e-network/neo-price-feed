@@ -59,7 +59,8 @@ namespace PriceFeed.Infrastructure.Services
                     GitHubRunNumber = runNumber,
                     GitHubRepository = repository,
                     GitHubWorkflow = workflow,
-                    AttestationType = "account_generation"
+                    AttestationType = "account_generation",
+                    Signature = string.Empty // Will be set after generation
                 };
 
                 // Generate attestation signature
@@ -70,7 +71,7 @@ namespace PriceFeed.Infrastructure.Services
                 var attestationPath = Path.Combine("attestations", "account_attestation.json");
 
                 // Ensure directory exists
-                Directory.CreateDirectory(Path.GetDirectoryName(attestationPath));
+                Directory.CreateDirectory(Path.GetDirectoryName(attestationPath)!);
 
                 // Write attestation to file
                 await File.WriteAllTextAsync(attestationPath, attestationJson);
@@ -112,12 +113,14 @@ namespace PriceFeed.Infrastructure.Services
                 var attestation = new AccountAttestationData
                 {
                     AccountAddress = accountAddress,
+                    AccountPublicKey = string.Empty, // Will be set after generation
                     CreatedAt = DateTime.UtcNow,
                     GitHubRunId = runId,
                     GitHubRunNumber = runNumber,
                     GitHubRepository = $"{repositoryOwner}/{repositoryName}",
                     GitHubWorkflow = workflowName,
-                    AttestationType = "account_generation"
+                    AttestationType = "account_generation",
+                    Signature = string.Empty // Will be set after generation
                 };
 
                 // Generate attestation signature
@@ -128,7 +131,7 @@ namespace PriceFeed.Infrastructure.Services
                 var attestationPath = Path.Combine("attestations", "account_attestation.json");
 
                 // Ensure directory exists
-                Directory.CreateDirectory(Path.GetDirectoryName(attestationPath));
+                Directory.CreateDirectory(Path.GetDirectoryName(attestationPath)!);
 
                 // Write attestation to file
                 await File.WriteAllTextAsync(attestationPath, attestationJson);
@@ -179,7 +182,8 @@ namespace PriceFeed.Infrastructure.Services
                     GitHubRunNumber = runNumber,
                     GitHubRepository = $"{repositoryOwner}/{repositoryName}",
                     GitHubWorkflow = workflowName,
-                    AttestationType = "price_feed_update"
+                    AttestationType = "price_feed_update",
+                    Signature = string.Empty // Will be set after generation
                 };
 
                 // Add price summaries (limited data to keep attestation small)
@@ -201,7 +205,7 @@ namespace PriceFeed.Infrastructure.Services
                 var attestationPath = Path.Combine("attestations", "price_feed", $"attestation_{dateStr}_{batch.BatchId}.json");
 
                 // Ensure directory exists
-                Directory.CreateDirectory(Path.GetDirectoryName(attestationPath));
+                Directory.CreateDirectory(Path.GetDirectoryName(attestationPath)!);
 
                 // Write attestation to file
                 var attestationJson = JsonConvert.SerializeObject(attestation, Formatting.Indented);

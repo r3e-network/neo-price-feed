@@ -48,13 +48,19 @@ namespace PriceFeed.Tests
             var attestation = new AccountAttestationData
             {
                 AccountAddress = "NeoAddress123",
+                AccountPublicKey = "test_public_key",
                 RunId = "12345",
                 RunNumber = "1",
                 RepoOwner = "testowner",
                 RepoName = "testrepo",
                 Workflow = "testworkflow",
                 Timestamp = DateTime.UtcNow.ToString("o"),
-                Signature = "valid_signature" // In a real test, this would be a valid signature
+                Signature = "valid_signature", // In a real test, this would be a valid signature
+                AttestationType = "account_generation",
+                GitHubRepository = "testowner/testrepo",
+                GitHubWorkflow = "testworkflow",
+                GitHubRunId = "12345",
+                GitHubRunNumber = "1"
             };
 
             // Mock the verification logic for testing
@@ -140,13 +146,19 @@ namespace PriceFeed.Tests
             var attestation = new AccountAttestationData
             {
                 AccountAddress = "NeoAddress123",
+                AccountPublicKey = "test_public_key",
                 RunId = "12345",
                 RunNumber = "1",
                 RepoOwner = "testowner",
                 RepoName = "testrepo",
                 Workflow = "testworkflow",
                 Timestamp = DateTime.UtcNow.ToString("o"),
-                Signature = "invalid_signature"
+                Signature = "invalid_signature",
+                AttestationType = "account_generation",
+                GitHubRepository = "testowner/testrepo",
+                GitHubWorkflow = "testworkflow",
+                GitHubRunId = "12345",
+                GitHubRunNumber = "1"
             };
 
             // Mock the verification logic for testing
