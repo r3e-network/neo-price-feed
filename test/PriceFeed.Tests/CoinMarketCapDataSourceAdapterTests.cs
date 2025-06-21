@@ -141,7 +141,7 @@ namespace PriceFeed.Tests
                 .Protected()
                 .Setup<Task<HttpResponseMessage>>(
                     "SendAsync",
-                    ItExpr.Is<HttpRequestMessage>(req => req.RequestUri.ToString().Contains("quotes/latest") && req.RequestUri.ToString().Contains("BTC")),
+                    ItExpr.Is<HttpRequestMessage>(req => req.RequestUri!.ToString().Contains("quotes/latest") && req.RequestUri!.ToString().Contains("BTC")),
                     ItExpr.IsAny<CancellationToken>())
                 .ReturnsAsync(btcResponse);
 
@@ -231,7 +231,7 @@ namespace PriceFeed.Tests
                 .Protected()
                 .Setup<Task<HttpResponseMessage>>(
                     "SendAsync",
-                    ItExpr.Is<HttpRequestMessage>(req => req.RequestUri.ToString().Contains("quotes/latest") && req.RequestUri.ToString().Contains("BTC")),
+                    ItExpr.Is<HttpRequestMessage>(req => req.RequestUri!.ToString().Contains("quotes/latest") && req.RequestUri!.ToString().Contains("BTC")),
                     ItExpr.IsAny<CancellationToken>())
                 .ReturnsAsync(btcResponse);
 
@@ -239,7 +239,7 @@ namespace PriceFeed.Tests
                 .Protected()
                 .Setup<Task<HttpResponseMessage>>(
                     "SendAsync",
-                    ItExpr.Is<HttpRequestMessage>(req => req.RequestUri.ToString().Contains("quotes/latest") && req.RequestUri.ToString().Contains("ETH")),
+                    ItExpr.Is<HttpRequestMessage>(req => req.RequestUri!.ToString().Contains("quotes/latest") && req.RequestUri!.ToString().Contains("ETH")),
                     ItExpr.IsAny<CancellationToken>())
                 .ReturnsAsync(ethResponse);
 
@@ -338,7 +338,7 @@ namespace PriceFeed.Tests
                 .Protected()
                 .Setup<Task<HttpResponseMessage>>(
                     "SendAsync",
-                    ItExpr.Is<HttpRequestMessage>(req => req.RequestUri.ToString().Contains("quotes/latest") && req.RequestUri.ToString().Contains("BTC")),
+                    ItExpr.Is<HttpRequestMessage>(req => req.RequestUri!.ToString().Contains("quotes/latest") && req.RequestUri!.ToString().Contains("BTC")),
                     ItExpr.IsAny<CancellationToken>())
                 .ReturnsAsync(btcResponse);
 

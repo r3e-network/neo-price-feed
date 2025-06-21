@@ -129,7 +129,7 @@ namespace PriceFeed.Tests
                 .Protected()
                 .Setup<Task<HttpResponseMessage>>(
                     "SendAsync",
-                    ItExpr.Is<HttpRequestMessage>(req => req.RequestUri.ToString().Contains("ticker/price") && req.RequestUri.ToString().Contains("BTCUSDT")),
+                    ItExpr.Is<HttpRequestMessage>(req => req.RequestUri!.ToString().Contains("ticker/price") && req.RequestUri!.ToString().Contains("BTCUSDT")),
                     ItExpr.IsAny<CancellationToken>())
                 .ReturnsAsync(tickerPriceResponse);
 
@@ -137,7 +137,7 @@ namespace PriceFeed.Tests
                 .Protected()
                 .Setup<Task<HttpResponseMessage>>(
                     "SendAsync",
-                    ItExpr.Is<HttpRequestMessage>(req => req.RequestUri.ToString().Contains("ticker/24hr") && req.RequestUri.ToString().Contains("BTCUSDT")),
+                    ItExpr.Is<HttpRequestMessage>(req => req.RequestUri!.ToString().Contains("ticker/24hr") && req.RequestUri!.ToString().Contains("BTCUSDT")),
                     ItExpr.IsAny<CancellationToken>())
                 .ReturnsAsync(ticker24hResponse);
 
@@ -168,7 +168,7 @@ namespace PriceFeed.Tests
                 .Protected()
                 .Setup<Task<HttpResponseMessage>>(
                     "SendAsync",
-                    ItExpr.Is<HttpRequestMessage>(req => req.RequestUri.ToString().Contains("ticker/price") && req.RequestUri.ToString().Contains("ETHUSDT")),
+                    ItExpr.Is<HttpRequestMessage>(req => req.RequestUri!.ToString().Contains("ticker/price") && req.RequestUri!.ToString().Contains("ETHUSDT")),
                     ItExpr.IsAny<CancellationToken>())
                 .ReturnsAsync(ethTickerPriceResponse);
 
@@ -176,7 +176,7 @@ namespace PriceFeed.Tests
                 .Protected()
                 .Setup<Task<HttpResponseMessage>>(
                     "SendAsync",
-                    ItExpr.Is<HttpRequestMessage>(req => req.RequestUri.ToString().Contains("ticker/24hr") && req.RequestUri.ToString().Contains("ETHUSDT")),
+                    ItExpr.Is<HttpRequestMessage>(req => req.RequestUri!.ToString().Contains("ticker/24hr") && req.RequestUri!.ToString().Contains("ETHUSDT")),
                     ItExpr.IsAny<CancellationToken>())
                 .ReturnsAsync(ethTicker24hResponse);
 
@@ -318,7 +318,7 @@ namespace PriceFeed.Tests
                 .Protected()
                 .Setup<Task<HttpResponseMessage>>(
                     "SendAsync",
-                    ItExpr.Is<HttpRequestMessage>(req => req.RequestUri.ToString().Contains("ticker/price") && req.RequestUri.ToString().Contains("BTCUSDT")),
+                    ItExpr.Is<HttpRequestMessage>(req => req.RequestUri!.ToString().Contains("ticker/price") && req.RequestUri!.ToString().Contains("BTCUSDT")),
                     ItExpr.IsAny<CancellationToken>())
                 .ReturnsAsync(tickerPriceResponse);
 
@@ -326,7 +326,7 @@ namespace PriceFeed.Tests
                 .Protected()
                 .Setup<Task<HttpResponseMessage>>(
                     "SendAsync",
-                    ItExpr.Is<HttpRequestMessage>(req => req.RequestUri.ToString().Contains("ticker/24hr") && req.RequestUri.ToString().Contains("BTCUSDT")),
+                    ItExpr.Is<HttpRequestMessage>(req => req.RequestUri!.ToString().Contains("ticker/24hr") && req.RequestUri!.ToString().Contains("BTCUSDT")),
                     ItExpr.IsAny<CancellationToken>())
                 .ReturnsAsync(ticker24hResponse);
 

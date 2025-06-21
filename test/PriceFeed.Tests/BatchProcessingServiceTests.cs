@@ -80,7 +80,7 @@ namespace PriceFeed.Tests
                     script = "script",
                     state = "HALT",
                     gasconsumed = "1000",
-                    exception = (string)null
+                    exception = (string?)null
                 }
             });
 
@@ -175,7 +175,7 @@ namespace PriceFeed.Tests
                     script = "script",
                     state = "HALT",
                     gasconsumed = "1000",
-                    exception = (string)null
+                    exception = (string?)null
                 }
             });
 
