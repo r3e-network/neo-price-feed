@@ -125,7 +125,7 @@ try
             services.Configure<CoinbaseOptions>(hostContext.Configuration.GetSection("Coinbase"));
             services.Configure<OKExOptions>(hostContext.Configuration.GetSection("OKEx"));
             services.Configure<BatchProcessingOptions>(hostContext.Configuration.GetSection("BatchProcessing"));
-            
+
             // Add options validation
             services.AddSingleton<IValidateOptions<BatchProcessingOptions>, BatchProcessingOptionsValidator>();
             services.AddSingleton<IValidateOptions<BinanceOptions>, BinanceOptionsValidator>();
@@ -135,7 +135,7 @@ try
 
             // Add memory cache
             services.AddMemoryCache();
-            
+
             // Register HTTP clients with resilience policies
             services.AddHttpClient();
 
@@ -242,7 +242,7 @@ try
             services.AddHealthChecks()
                 .AddCheck<DataSourceHealthCheck>("data_sources", tags: new[] { "ready" })
                 .AddCheck<NeoRpcHealthCheck>("neo_rpc", tags: new[] { "ready" });
-            
+
             // Add OpenTelemetry
             services.AddOpenTelemetry()
                 .ConfigureResource(resource => resource
@@ -260,7 +260,7 @@ try
                     .AddMeter("PriceFeed")
                     .AddHttpClientInstrumentation()
                     .AddConsoleExporter());
-            
+
             // Register the main job
             services.AddTransient<PriceFeedJob>();
         })

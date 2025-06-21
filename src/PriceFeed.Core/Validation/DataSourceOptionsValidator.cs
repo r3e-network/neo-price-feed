@@ -47,8 +47,8 @@ public abstract class DataSourceOptionsValidator<T> : IValidateOptions<T> where 
             }
         }
 
-        return failures.Any() 
-            ? ValidateOptionsResult.Fail(failures) 
+        return failures.Any()
+            ? ValidateOptionsResult.Fail(failures)
             : ValidateOptionsResult.Success;
     }
 }

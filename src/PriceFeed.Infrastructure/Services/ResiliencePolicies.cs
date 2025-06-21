@@ -22,7 +22,7 @@ public static class ResiliencePolicies
             .OrResult(msg => !msg.IsSuccessStatusCode)
             .WaitAndRetryAsync(
                 retryCount: 3,
-                sleepDurationProvider: retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)) 
+                sleepDurationProvider: retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt))
                     + TimeSpan.FromMilliseconds(Random.Shared.Next(0, 1000)),
                 onRetry: (outcome, timespan, retryCount, context) =>
                 {
@@ -85,8 +85,8 @@ public static class ResiliencePolicies
     /// Creates a fallback policy with cached data
     /// </summary>
     public static IAsyncPolicy<T> GetFallbackPolicy<T>(
-        ILogger logger, 
-        string operation, 
+        ILogger logger,
+        string operation,
         Func<CancellationToken, Task<T>> fallbackAction)
     {
         return Policy<T>

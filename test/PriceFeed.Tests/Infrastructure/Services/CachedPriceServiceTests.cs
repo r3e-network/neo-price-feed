@@ -190,7 +190,7 @@ public class CachedPriceServiceTests
             .ThrowsAsync(new Exception("Service unavailable"));
 
         // Act & Assert
-        await Assert.ThrowsAsync<Exception>(() => 
+        await Assert.ThrowsAsync<Exception>(() =>
             _cachedService.GetPriceDataBatchAsync(new[] { "BTC", "ETH", "NEO" }));
     }
 

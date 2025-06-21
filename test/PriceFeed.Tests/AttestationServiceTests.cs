@@ -21,20 +21,20 @@ namespace PriceFeed.Tests
         public AttestationServiceTests()
         {
             _loggerMock = new Mock<ILogger<AttestationService>>();
-            
+
             // Create a temporary directory for attestations
             _testAttestationDir = Path.Combine(Path.GetTempPath(), "attestations_test_" + Guid.NewGuid().ToString("N"));
             Directory.CreateDirectory(_testAttestationDir);
             Directory.CreateDirectory(Path.Combine(_testAttestationDir, "price_feed"));
-            
+
             // Set up configuration to use test directory
             var configSection = new Mock<IConfigurationSection>();
             configSection.Setup(s => s.Value).Returns(_testAttestationDir);
-            
+
             _configMock = new Mock<IConfiguration>();
             _configMock.Setup(c => c.GetSection("AttestationSettings:BaseDirectory"))
                 .Returns(configSection.Object);
-            
+
             // Create service with test configuration
             _service = new AttestationService(_loggerMock.Object, _configMock.Object);
         }

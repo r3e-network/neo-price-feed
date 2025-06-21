@@ -208,7 +208,7 @@ public class NeoRpcHealthCheckTests
         Assert.NotNull(capturedRequest);
         Assert.Equal(HttpMethod.Post, capturedRequest.Method);
         Assert.Equal("https://test.neo.org/", capturedRequest.RequestUri?.ToString());
-        
+
         var content = await capturedRequest.Content!.ReadAsStringAsync();
         Assert.Contains("getblockcount", content);
         Assert.Contains("\"jsonrpc\":\"2.0\"", content);

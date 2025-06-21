@@ -27,7 +27,7 @@ public class DataSourceHealthCheck : IHealthCheck
         try
         {
             var enabledAdapters = _dataSourceAdapters.Where(a => a.IsEnabled()).ToList();
-            
+
             if (!enabledAdapters.Any())
             {
                 return HealthCheckResult.Unhealthy("No enabled data sources");
@@ -43,7 +43,7 @@ public class DataSourceHealthCheck : IHealthCheck
                     // Try to fetch a single symbol to test connectivity
                     var testSymbol = "BTCUSDT";
                     var priceData = await adapter.GetPriceDataAsync(testSymbol);
-                    
+
                     if (priceData != null && priceData.Price > 0)
                     {
                         healthyCount++;

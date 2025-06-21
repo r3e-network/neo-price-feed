@@ -88,8 +88,8 @@ public class BatchProcessingOptionsValidator : IValidateOptions<BatchProcessingO
             failures.Add("Max batch size should not exceed 100 for optimal performance");
         }
 
-        return failures.Any() 
-            ? ValidateOptionsResult.Fail(failures) 
+        return failures.Any()
+            ? ValidateOptionsResult.Fail(failures)
             : ValidateOptionsResult.Success;
     }
 }

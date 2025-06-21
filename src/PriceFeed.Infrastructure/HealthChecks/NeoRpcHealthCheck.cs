@@ -23,7 +23,7 @@ public class NeoRpcHealthCheck : IHealthCheck
         _httpClient = httpClientFactory.CreateClient("Neo");
         _options = options.Value;
         _logger = logger;
-        
+
         if (!string.IsNullOrEmpty(_options.RpcEndpoint))
         {
             _httpClient.BaseAddress = new Uri(_options.RpcEndpoint);
@@ -51,11 +51,11 @@ public class NeoRpcHealthCheck : IHealthCheck
             };
 
             var response = await _httpClient.PostAsJsonAsync("", request, cancellationToken);
-            
+
             if (response.IsSuccessStatusCode)
             {
                 var content = await response.Content.ReadAsStringAsync(cancellationToken);
-                
+
                 if (content.Contains("\"result\""))
                 {
                     return HealthCheckResult.Healthy("Neo RPC endpoint is responsive", new Dictionary<string, object>

@@ -14,7 +14,7 @@ public class CachedPriceService : IDataSourceAdapter
     private readonly IMemoryCache _cache;
     private readonly ILogger<CachedPriceService> _logger;
     private readonly TimeSpan _cacheExpiration;
-    
+
     public string SourceName => _innerAdapter.SourceName;
 
     public CachedPriceService(
@@ -34,7 +34,7 @@ public class CachedPriceService : IDataSourceAdapter
     public async Task<IEnumerable<string>> GetSupportedSymbolsAsync()
     {
         var cacheKey = $"{SourceName}:supported_symbols";
-        
+
         if (_cache.TryGetValue<IEnumerable<string>>(cacheKey, out var cachedSymbols))
         {
             _logger.LogDebug("Cache hit for supported symbols from {Source}", SourceName);
@@ -42,17 +42,17 @@ public class CachedPriceService : IDataSourceAdapter
         }
 
         var symbols = await _innerAdapter.GetSupportedSymbolsAsync();
-        
+
         // Cache supported symbols for longer as they don't change frequently
         _cache.Set(cacheKey, symbols, TimeSpan.FromMinutes(5));
-        
+
         return symbols;
     }
 
     public async Task<PriceData> GetPriceDataAsync(string symbol)
     {
         var cacheKey = $"{SourceName}:price:{symbol}";
-        
+
         if (_cache.TryGetValue<PriceData>(cacheKey, out var cachedPrice))
         {
             _logger.LogDebug("Cache hit for {Symbol} from {Source}", symbol, SourceName);
@@ -60,30 +60,30 @@ public class CachedPriceService : IDataSourceAdapter
         }
 
         _logger.LogDebug("Cache miss for {Symbol} from {Source}", symbol, SourceName);
-        
+
         try
         {
             var priceData = await _innerAdapter.GetPriceDataAsync(symbol);
-            
+
             // Only cache successful responses
             if (priceData != null && priceData.Price > 0)
             {
                 _cache.Set(cacheKey, priceData, _cacheExpiration);
             }
-            
+
             return priceData!;
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error fetching price data for {Symbol} from {Source}", symbol, SourceName);
-            
+
             // Try to return stale data if available
             if (_cache.TryGetValue<PriceData>(cacheKey, out var stalePrice))
             {
                 _logger.LogWarning("Returning stale cached data for {Symbol} from {Source}", symbol, SourceName);
                 return stalePrice!;
             }
-            
+
             throw;
         }
     }
@@ -98,7 +98,7 @@ public class CachedPriceService : IDataSourceAdapter
         foreach (var symbol in symbolList)
         {
             var cacheKey = $"{SourceName}:price:{symbol}";
-            
+
             if (_cache.TryGetValue<PriceData>(cacheKey, out var cachedPrice))
             {
                 _logger.LogDebug("Cache hit for {Symbol} from {Source}", symbol, SourceName);
@@ -114,11 +114,11 @@ public class CachedPriceService : IDataSourceAdapter
         if (symbolsToFetch.Any())
         {
             _logger.LogDebug("Fetching {Count} symbols from {Source}", symbolsToFetch.Count, SourceName);
-            
+
             try
             {
                 var fetchedPrices = await _innerAdapter.GetPriceDataBatchAsync(symbolsToFetch);
-                
+
                 foreach (var priceData in fetchedPrices)
                 {
                     // Cache the fetched data
@@ -127,7 +127,7 @@ public class CachedPriceService : IDataSourceAdapter
                         var cacheKey = $"{SourceName}:price:{priceData.Symbol}";
                         _cache.Set(cacheKey, priceData, _cacheExpiration);
                     }
-                    
+
                     if (priceData != null)
                     {
                         results.Add(priceData);
@@ -137,7 +137,7 @@ public class CachedPriceService : IDataSourceAdapter
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error fetching batch price data from {Source}", SourceName);
-                
+
                 // Try to return stale data for missing symbols
                 foreach (var symbol in symbolsToFetch)
                 {
@@ -148,7 +148,7 @@ public class CachedPriceService : IDataSourceAdapter
                         results.Add(stalePrice!);
                     }
                 }
-                
+
                 if (!results.Any())
                 {
                     throw;
