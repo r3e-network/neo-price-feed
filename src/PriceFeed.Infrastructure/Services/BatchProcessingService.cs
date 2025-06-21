@@ -168,9 +168,10 @@ public class BatchProcessingService : IBatchProcessingService, IDisposable
                 }
 
                 // Check if the transaction state is FAULT
-                if (responseObject?.result?.state != null && responseObject.result.state!.ToString() == "FAULT")
+                var resultState = responseObject?.result?.state?.ToString();
+                if (resultState == "FAULT")
                 {
-                    string exception = responseObject.result.exception?.ToString() ?? "unknown";
+                    string exception = responseObject?.result?.exception?.ToString() ?? "unknown";
                     _logger.LogError("Transaction execution failed: {Exception}", exception);
                     _batchStatuses[batch.BatchId] = BatchStatus.Failed;
                     return false;
@@ -407,14 +408,20 @@ public class BatchProcessingService : IBatchProcessingService, IDisposable
             var teeKeyPair = new Neo.Wallets.KeyPair(Neo.Wallets.Wallet.GetPrivateKeyFromWIF(_options.TeeAccountPrivateKey));
             var masterKeyPair = new Neo.Wallets.KeyPair(Neo.Wallets.Wallet.GetPrivateKeyFromWIF(_options.MasterAccountPrivateKey));
 
+            // Extract values safely from dynamic object
+            long? systemFee = transactionData?.systemFee;
+            long? networkFee = transactionData?.networkFee;
+            uint? validUntilBlock = transactionData?.validUntilBlock;
+            string? scriptString = transactionData?.script?.ToString();
+
             // Build the transaction object
             var neoTransaction = new Neo.Network.P2P.Payloads.Transaction
             {
                 Version = 0,
                 Nonce = (uint)new Random().Next(),
-                SystemFee = transactionData.systemFee != null ? (long)transactionData.systemFee! : 0,
-                NetworkFee = transactionData.networkFee != null ? (long)transactionData.networkFee : 0,
-                ValidUntilBlock = transactionData.validUntilBlock != null ? (uint)transactionData.validUntilBlock : 0,
+                SystemFee = systemFee ?? 0,
+                NetworkFee = networkFee ?? 0,
+                ValidUntilBlock = validUntilBlock ?? 0,
                 Attributes = Array.Empty<Neo.Network.P2P.Payloads.TransactionAttribute>(),
                 Signers = new Neo.Network.P2P.Payloads.Signer[]
                 {
@@ -429,7 +436,7 @@ public class BatchProcessingService : IBatchProcessingService, IDisposable
                         Scopes = Neo.Network.P2P.Payloads.WitnessScope.CalledByEntry
                     }
                 },
-                Script = Convert.FromBase64String(transactionData.script?.ToString() ?? string.Empty),
+                Script = Convert.FromBase64String(scriptString ?? string.Empty),
                 Witnesses = new Neo.Network.P2P.Payloads.Witness[0]
             };
 
