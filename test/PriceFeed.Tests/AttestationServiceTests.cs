@@ -111,7 +111,7 @@ namespace PriceFeed.Tests
 
             // Use reflection or create a new service instance to access the signature generation
             var service = new AttestationService(_loggerMock.Object, _configMock.Object);
-            
+
             // We'll use the same logic as the real GenerateSignature method
             var json = Newtonsoft.Json.JsonConvert.SerializeObject(attestation);
             var githubSha = Environment.GetEnvironmentVariable("GITHUB_SHA") ?? "";
@@ -124,7 +124,7 @@ namespace PriceFeed.Tests
 
             // Restore original signature
             attestation.Signature = originalSignature;
-            
+
             return signature;
         }
 
