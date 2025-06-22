@@ -56,35 +56,76 @@ namespace PriceFeed.Tests
         [Fact]
         public void VerifyAccountAttestation_WithValidAttestation_ShouldReturnTrue()
         {
-            // Arrange
-            var attestation = new AccountAttestationData
+            // Arrange - Set up GitHub environment variables for signature generation
+            Environment.SetEnvironmentVariable("GITHUB_SHA", "test-sha-123");
+            Environment.SetEnvironmentVariable("GITHUB_TOKEN", "test-token-456");
+            Environment.SetEnvironmentVariable("GITHUB_ACTOR", "test-actor");
+
+            try
             {
-                AccountAddress = "NeoAddress123",
-                AccountPublicKey = "test_public_key",
-                RunId = "12345",
-                RunNumber = "1",
-                RepoOwner = "testowner",
-                RepoName = "testrepo",
-                Workflow = "testworkflow",
-                Timestamp = DateTime.UtcNow.ToString("o"),
-                Signature = "valid_signature", // In a real test, this would be a valid signature
-                AttestationType = "account_generation",
-                GitHubRepository = "testowner/testrepo",
-                GitHubWorkflow = "testworkflow",
-                GitHubRunId = "12345",
-                GitHubRunNumber = "1"
-            };
+                var attestation = new AccountAttestationData
+                {
+                    AccountAddress = "NeoAddress123",
+                    AccountPublicKey = "test_public_key",
+                    RunId = "12345",
+                    RunNumber = "1",
+                    RepoOwner = "testowner",
+                    RepoName = "testrepo",
+                    Workflow = "testworkflow",
+                    Timestamp = DateTime.UtcNow.ToString("o"),
+                    Signature = string.Empty, // Will be set to valid signature below
+                    AttestationType = "account_generation",
+                    GitHubRepository = "testowner/testrepo",
+                    GitHubWorkflow = "testworkflow",
+                    GitHubRunId = "12345",
+                    GitHubRunNumber = "1"
+                };
 
-            // Mock the verification logic for testing - since the real verification requires valid cryptographic signatures
-            var serviceMock = new Mock<IAttestationService>();
-            serviceMock.Setup(s => s.VerifyAccountAttestation(It.IsAny<AccountAttestationData>()))
-                .Returns(true);
+                // Generate a valid signature using the real service
+                var validSignature = GenerateValidSignature(attestation);
+                attestation.Signature = validSignature;
 
-            // Act
-            var result = serviceMock.Object.VerifyAccountAttestation(attestation);
+                // Act - Use the real service to verify the attestation
+                var result = _service.VerifyAccountAttestation(attestation);
 
-            // Assert
-            Assert.True(result);
+                // Assert
+                Assert.True(result);
+            }
+            finally
+            {
+                // Clean up environment variables
+                Environment.SetEnvironmentVariable("GITHUB_SHA", null);
+                Environment.SetEnvironmentVariable("GITHUB_TOKEN", null);
+                Environment.SetEnvironmentVariable("GITHUB_ACTOR", null);
+            }
+        }
+
+        /// <summary>
+        /// Helper method to generate valid signatures for testing
+        /// </summary>
+        private string GenerateValidSignature(AccountAttestationData attestation)
+        {
+            // Clear signature field before generating
+            var originalSignature = attestation.Signature;
+            attestation.Signature = string.Empty;
+
+            // Use reflection or create a new service instance to access the signature generation
+            var service = new AttestationService(_loggerMock.Object, _configMock.Object);
+            
+            // We'll use the same logic as the real GenerateSignature method
+            var json = Newtonsoft.Json.JsonConvert.SerializeObject(attestation);
+            var githubSha = Environment.GetEnvironmentVariable("GITHUB_SHA") ?? "";
+            var githubActor = Environment.GetEnvironmentVariable("GITHUB_ACTOR") ?? "";
+            var dataToSign = $"{json}|{githubSha}|{githubActor}";
+
+            using var sha256 = System.Security.Cryptography.SHA256.Create();
+            var hashBytes = sha256.ComputeHash(System.Text.Encoding.UTF8.GetBytes(dataToSign));
+            var signature = BitConverter.ToString(hashBytes).Replace("-", "").ToLowerInvariant();
+
+            // Restore original signature
+            attestation.Signature = originalSignature;
+            
+            return signature;
         }
 
         [Fact]
