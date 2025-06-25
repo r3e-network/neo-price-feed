@@ -115,7 +115,7 @@ jobs:
 
       - name: Upload Attestation as Artifact
         if: steps.check-account.outputs.account_exists != 'true'
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: account-attestation
           path: attestations/account_attestation.json
@@ -225,7 +225,7 @@ jobs:
 
       - name: Upload Recovery Instructions as Artifact
         if: steps.check-account.outputs.account_exists != 'true'
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: neo-account-recovery
           path: backup/
