@@ -125,7 +125,7 @@ public class CoinGeckoDataSourceAdapterTests
     }
 
     [Fact]
-    public async Task GetPriceDataAsync_WithUnsupportedSymbol_ShouldThrowNotSupportedException()
+    public async Task GetPriceDataAsync_WithUnsupportedSymbol_ShouldThrowException()
     {
         // Arrange
         var adapter = new CoinGeckoDataSourceAdapter(
@@ -135,7 +135,8 @@ public class CoinGeckoDataSourceAdapterTests
             Options.Create(_priceFeedOptions));
 
         // Act & Assert
-        await Assert.ThrowsAsync<NotSupportedException>(() => adapter.GetPriceDataAsync("UNSUPPORTED"));
+        var exception = await Assert.ThrowsAsync<NotSupportedException>(() => adapter.GetPriceDataAsync("UNSUPPORTED"));
+        Assert.Contains("not supported by CoinGecko", exception.Message);
     }
 
     [Fact]

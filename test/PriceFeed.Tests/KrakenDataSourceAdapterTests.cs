@@ -136,7 +136,7 @@ public class KrakenDataSourceAdapterTests
     }
 
     [Fact]
-    public async Task GetPriceDataAsync_WithUnsupportedSymbol_ShouldThrowNotSupportedException()
+    public async Task GetPriceDataAsync_WithUnsupportedSymbol_ShouldThrowException()
     {
         // Arrange
         var adapter = new KrakenDataSourceAdapter(
@@ -146,7 +146,8 @@ public class KrakenDataSourceAdapterTests
             Options.Create(_priceFeedOptions));
 
         // Act & Assert
-        await Assert.ThrowsAsync<NotSupportedException>(() => adapter.GetPriceDataAsync("UNSUPPORTED"));
+        var exception = await Assert.ThrowsAsync<NotSupportedException>(() => adapter.GetPriceDataAsync("UNSUPPORTED"));
+        Assert.Contains("not supported by Kraken", exception.Message);
     }
 
     [Fact]
