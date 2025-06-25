@@ -29,16 +29,9 @@ public class CoinbaseDataSourceAdapter : IDataSourceAdapter
     /// <returns>True if the data source is enabled, false otherwise</returns>
     public bool IsEnabled()
     {
-        // Coinbase can work with public API for price data, but we'll check for API key
-        // to determine if it's explicitly enabled
-        bool hasApiKey = !string.IsNullOrEmpty(_options.ApiKey) && !string.IsNullOrEmpty(_options.ApiSecret);
-
-        if (!hasApiKey)
-        {
-            _logger.LogWarning("Coinbase API key or secret is not configured. Coinbase data source is disabled.");
-        }
-
-        return hasApiKey;
+        // Coinbase exchange rates endpoint works with public API without requiring API key
+        // Always enabled unless explicitly disabled
+        return true;
     }
 
     /// <summary>
@@ -109,28 +102,39 @@ public class CoinbaseDataSourceAdapter : IDataSourceAdapter
             var baseCurrency = parts[0];
             var quoteCurrency = parts[1];
 
-            // Build the request URL
-            var endpoint = $"{_options.SpotPriceEndpoint}/{baseCurrency}-{quoteCurrency}/spot";
+            // Use the exchange rates endpoint which is publicly accessible
+            var endpoint = $"{_options.ExchangeRatesEndpoint}?currency={baseCurrency}";
             var response = await _httpClient.GetAsync(endpoint);
             response.EnsureSuccessStatusCode();
 
             var content = await response.Content.ReadAsStringAsync();
-            var spotPriceResponse = JsonConvert.DeserializeObject<CoinbaseSpotPriceResponse>(content);
+            var exchangeRatesResponse = JsonConvert.DeserializeObject<CoinbaseExchangeRatesResponse>(content);
 
-            if (spotPriceResponse?.Data == null)
+            if (exchangeRatesResponse?.Data?.Rates == null)
             {
                 _logger.LogWarning("Failed to get price data for symbol {Symbol} from Coinbase: Response is invalid", symbol);
                 throw new Exception($"Failed to get price data for symbol {symbol} from Coinbase");
             }
 
-            // Volume information is not directly available from the spot price endpoint
-            // Volume data would require additional API calls to trading endpoints
+            // Get the rate for the quote currency
+            if (!exchangeRatesResponse.Data.Rates.ContainsKey(quoteCurrency))
+            {
+                _logger.LogWarning("Quote currency {QuoteCurrency} not found in Coinbase exchange rates", quoteCurrency);
+                throw new Exception($"Quote currency {quoteCurrency} not found in Coinbase exchange rates");
+            }
+
+            var rate = decimal.Parse(exchangeRatesResponse.Data.Rates[quoteCurrency]);
+
+            // Convert rate to price (exchange rates are typically base/quote, we need quote/base for price)
+            decimal price = 1 / rate;
+
+            // Volume information is not available from the exchange rates endpoint
             decimal? volume = null;
 
             return new PriceData
             {
                 Symbol = symbol,
-                Price = decimal.Parse(spotPriceResponse.Data.Amount),
+                Price = price,
                 Source = SourceName,
                 Timestamp = DateTime.UtcNow,
                 Volume = volume,
@@ -138,6 +142,7 @@ public class CoinbaseDataSourceAdapter : IDataSourceAdapter
                 {
                     { "BaseCurrency", baseCurrency },
                     { "QuoteCurrency", quoteCurrency },
+                    { "ExchangeRate", rate.ToString() },
                     { "SourceSymbol", coinbaseSymbol } // Store the source-specific symbol in metadata
                 }
             };
@@ -188,25 +193,22 @@ public class CoinbaseDataSourceAdapter : IDataSourceAdapter
 }
 
 /// <summary>
-/// Response from Coinbase spot price API
+/// Response from Coinbase exchange rates API
 /// </summary>
-internal class CoinbaseSpotPriceResponse
+internal class CoinbaseExchangeRatesResponse
 {
     [JsonProperty("data")]
-    public CoinbaseSpotPriceData Data { get; set; } = new();
+    public CoinbaseExchangeRatesData Data { get; set; } = new();
 }
 
 /// <summary>
-/// Spot price data from Coinbase
+/// Exchange rates data from Coinbase
 /// </summary>
-internal class CoinbaseSpotPriceData
+internal class CoinbaseExchangeRatesData
 {
-    [JsonProperty("base")]
-    public string Base { get; set; } = string.Empty;
-
     [JsonProperty("currency")]
     public string Currency { get; set; } = string.Empty;
 
-    [JsonProperty("amount")]
-    public string Amount { get; set; } = string.Empty;
+    [JsonProperty("rates")]
+    public Dictionary<string, string> Rates { get; set; } = new();
 }
