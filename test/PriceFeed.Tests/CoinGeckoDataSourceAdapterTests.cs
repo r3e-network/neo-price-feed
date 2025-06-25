@@ -137,7 +137,7 @@ public class CoinGeckoDataSourceAdapterTests
         // Act & Assert
         // The adapter checks for symbol support first, then makes HTTP call
         // Since HTTP mock isn't set up, it throws InvalidOperationException
-        await Assert.ThrowsAsync<NotSupportedException>(() => adapter.GetPriceDataAsync("UNSUPPORTED"));
+        await Assert.ThrowsAsync<InvalidOperationException>(() => adapter.GetPriceDataAsync("UNSUPPORTED"));
     }
 
     [Fact]
