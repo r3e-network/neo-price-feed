@@ -15,4 +15,9 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
+  <!-- Add Neo compiler integration -->
+  <Target Name="PostBuild" AfterTargets="PostBuildEvent">
+    <Exec Command="nccs &quot;$(MSBuildProjectFile)&quot;" />
+  </Target>
+
 </Project>
