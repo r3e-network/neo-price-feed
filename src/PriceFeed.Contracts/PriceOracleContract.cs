@@ -108,14 +108,14 @@ namespace PriceFeed.Contracts
                 teeAccounts.Put(initialTeeAccount, 1);
 
                 // Emit event
-                OnTeeAccountAdded?.Invoke(initialTeeAccount);
+                OnTeeAccountAdded(initialTeeAccount);
             }
 
             // Mark as initialized
             Storage.Put(context, InitializedKey, 1);
 
             // Emit event
-            OnInitialized?.Invoke(owner);
+            OnInitialized(owner);
 
             return true;
         }
@@ -140,7 +140,7 @@ namespace PriceFeed.Contracts
             Storage.Put(context, MinOraclesKey, minOracles);
 
             // Emit event
-            OnMinOraclesUpdated?.Invoke(minOracles);
+            OnMinOraclesUpdated(minOracles);
 
             return true;
         }
@@ -172,7 +172,7 @@ namespace PriceFeed.Contracts
             Storage.Put(context, CircuitBreakerKey, triggered ? 1 : 0);
 
             // Emit event
-            OnCircuitBreakerTriggered?.Invoke(triggered);
+            OnCircuitBreakerTriggered(triggered);
 
             return true;
         }
@@ -228,7 +228,7 @@ namespace PriceFeed.Contracts
             Storage.Put(context, OwnerKey, newOwner);
 
             // Emit event
-            OnOwnerChanged?.Invoke(currentOwner, newOwner);
+            OnOwnerChanged(currentOwner, newOwner);
 
             return true;
         }
@@ -249,7 +249,7 @@ namespace PriceFeed.Contracts
             Storage.Put(context, PausedKey, paused ? 1 : 0);
 
             // Emit event
-            OnContractPaused?.Invoke(paused);
+            OnContractPaused(paused);
 
             return true;
         }
@@ -281,7 +281,7 @@ namespace PriceFeed.Contracts
             ContractManagement.Update(nefFile, manifest, data);
 
             // Emit event
-            OnContractUpgraded?.Invoke(Runtime.ExecutingScriptHash);
+            OnContractUpgraded(Runtime.ExecutingScriptHash);
 
             return true;
         }
@@ -316,7 +316,7 @@ namespace PriceFeed.Contracts
             Storage.Put(context, OracleCountKey, count);
 
             // Emit event
-            OnOracleAdded?.Invoke(oracleAddress);
+            OnOracleAdded(oracleAddress);
 
             return true;
         }
@@ -354,7 +354,7 @@ namespace PriceFeed.Contracts
             }
 
             // Emit event
-            OnOracleRemoved?.Invoke(oracleAddress);
+            OnOracleRemoved(oracleAddress);
 
             return true;
         }
@@ -394,7 +394,7 @@ namespace PriceFeed.Contracts
             teeAccounts.Put(teeAccountAddress, 1);
 
             // Emit event
-            OnTeeAccountAdded?.Invoke(teeAccountAddress);
+            OnTeeAccountAdded(teeAccountAddress);
 
             return true;
         }
@@ -424,7 +424,7 @@ namespace PriceFeed.Contracts
             teeAccounts.Delete(teeAccountAddress);
 
             // Emit event
-            OnTeeAccountRemoved?.Invoke(teeAccountAddress);
+            OnTeeAccountRemoved(teeAccountAddress);
 
             return true;
         }
@@ -521,7 +521,7 @@ namespace PriceFeed.Contracts
                 confidences.Put(symbol, confidenceScore);
 
                 // Emit event
-                OnPriceUpdated?.Invoke(symbol, price, timestamp, confidenceScore);
+                OnPriceUpdated(symbol, price, timestamp, confidenceScore);
 
                 result = true;
             }
@@ -630,7 +630,7 @@ namespace PriceFeed.Contracts
                     confidencesMap.Put(symbol, confidenceScore);
 
                     // Emit event
-                    OnPriceUpdated?.Invoke(symbol, price, timestamp, confidenceScore);
+                    OnPriceUpdated(symbol, price, timestamp, confidenceScore);
 
                     atLeastOneUpdated = true;
                 }
