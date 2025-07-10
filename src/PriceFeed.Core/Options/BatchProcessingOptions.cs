@@ -71,7 +71,16 @@ public class BatchProcessingOptions
     /// </summary>
     public BatchProcessingOptions()
     {
-        // Try to get values from environment variables
+        // Environment variables will only override configuration if explicitly set
+        // This allows appsettings.json to work properly in testnet mode
+    }
+
+    /// <summary>
+    /// Called after configuration binding to apply environment variable overrides
+    /// </summary>
+    public void ApplyEnvironmentOverrides()
+    {
+        // Try to get values from environment variables (these can override config values)
         var rpcEndpoint = Environment.GetEnvironmentVariable("NEO_RPC_ENDPOINT");
         if (!string.IsNullOrEmpty(rpcEndpoint))
         {
@@ -84,7 +93,7 @@ public class BatchProcessingOptions
             ContractScriptHash = contractHash;
         }
 
-        // Get the TEE account credentials from environment variables
+        // Get the TEE account credentials from environment variables (if set)
         var teeAccountAddress = Environment.GetEnvironmentVariable("TEE_ACCOUNT_ADDRESS");
         if (!string.IsNullOrEmpty(teeAccountAddress))
         {
@@ -97,7 +106,7 @@ public class BatchProcessingOptions
             TeeAccountPrivateKey = teeAccountPrivateKey;
         }
 
-        // Get the Master account credentials from environment variables
+        // Get the Master account credentials from environment variables (if set)
         var masterAccountAddress = Environment.GetEnvironmentVariable("MASTER_ACCOUNT_ADDRESS");
         if (!string.IsNullOrEmpty(masterAccountAddress))
         {
@@ -110,7 +119,7 @@ public class BatchProcessingOptions
             MasterAccountPrivateKey = masterAccountPrivateKey;
         }
 
-        // For backward compatibility, also check the old environment variables
+        // For backward compatibility, also check the old environment variables (only if not already set)
         if (string.IsNullOrEmpty(TeeAccountAddress))
         {
             var accountAddress = Environment.GetEnvironmentVariable("NEO_ACCOUNT_ADDRESS");

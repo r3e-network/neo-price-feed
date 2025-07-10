@@ -24,12 +24,21 @@ public class PriceFeedOptions
     /// </summary>
     public PriceFeedOptions()
     {
+        // Environment variables will only override configuration if explicitly set
+        // This allows appsettings.json to work properly in testnet mode
+    }
+
+    /// <summary>
+    /// Called after configuration binding to apply environment variable overrides
+    /// </summary>
+    public void ApplyEnvironmentOverrides()
+    {
         // Try to get symbols from environment variable
         var symbolsEnv = Environment.GetEnvironmentVariable("SYMBOLS");
         if (!string.IsNullOrEmpty(symbolsEnv))
         {
             // Parse, sanitize, and validate symbols
-            Symbols = symbolsEnv
+            var envSymbols = symbolsEnv
                 .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
                 .Where(s => !string.IsNullOrWhiteSpace(s))
                 .Select(SanitizeSymbol) // Sanitize symbols
@@ -37,19 +46,47 @@ public class PriceFeedOptions
                 .Distinct() // Remove duplicates
                 .ToList();
 
-            // Log warning if no valid symbols were found
-            if (Symbols.Count == 0)
+            // Only override if we have valid symbols from environment
+            if (envSymbols.Count > 0)
             {
-                Console.WriteLine("Warning: No valid symbols found in SYMBOLS environment variable");
-
-                // Add some default symbols
-                Symbols = new List<string> { "NEOBTC", "NEOUSDT", "BTCUSDT" };
+                Symbols = envSymbols;
             }
         }
-        else
+
+        // Set defaults if no symbols are configured at all (use testnet-friendly subset)
+        if (Symbols == null || Symbols.Count == 0)
         {
-            // Default symbols if none provided
-            Symbols = new List<string> { "NEOBTC", "NEOUSDT", "BTCUSDT" };
+            Symbols = new List<string> { "BTCUSDT", "ETHUSDT", "NEOUSDT" };
+        }
+
+        // Set default symbol mappings if none are configured
+        if (SymbolMappings == null || SymbolMappings.Mappings == null || SymbolMappings.Mappings.Count == 0)
+        {
+            SymbolMappings = new SymbolMappingOptions();
+            SymbolMappings.Mappings = new Dictionary<string, Dictionary<string, string>>
+            {
+                ["BTCUSDT"] = new Dictionary<string, string>
+                {
+                    ["Binance"] = "BTCUSDT",
+                    ["OKEx"] = "BTC-USDT",
+                    ["Coinbase"] = "BTC-USD",
+                    ["CoinMarketCap"] = "BTC"
+                },
+                ["ETHUSDT"] = new Dictionary<string, string>
+                {
+                    ["Binance"] = "ETHUSDT",
+                    ["OKEx"] = "ETH-USDT",
+                    ["Coinbase"] = "ETH-USD",
+                    ["CoinMarketCap"] = "ETH"
+                },
+                ["NEOUSDT"] = new Dictionary<string, string>
+                {
+                    ["Binance"] = "NEOUSDT",
+                    ["OKEx"] = "NEO-USDT",
+                    ["Coinbase"] = "NEO-USD",
+                    ["CoinMarketCap"] = "NEO"
+                }
+            };
         }
     }
 

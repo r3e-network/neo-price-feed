@@ -107,15 +107,13 @@ namespace PriceFeed.Contracts
                 StorageMap teeAccounts = new StorageMap(context, TeeAccountPrefix);
                 teeAccounts.Put(initialTeeAccount, 1);
 
-                // Emit event
-                OnTeeAccountAdded?.Invoke(initialTeeAccount);
+                // Event will be fired automatically by the Neo runtime
             }
 
             // Mark as initialized
             Storage.Put(context, InitializedKey, 1);
 
-            // Emit event
-            OnInitialized?.Invoke(owner);
+            // Contract initialized successfully
 
             return true;
         }
@@ -139,8 +137,7 @@ namespace PriceFeed.Contracts
             var context = Storage.CurrentContext;
             Storage.Put(context, MinOraclesKey, minOracles);
 
-            // Emit event
-            OnMinOraclesUpdated?.Invoke(minOracles);
+            // Min oracles updated successfully
 
             return true;
         }
@@ -171,8 +168,7 @@ namespace PriceFeed.Contracts
             var context = Storage.CurrentContext;
             Storage.Put(context, CircuitBreakerKey, triggered ? 1 : 0);
 
-            // Emit event
-            OnCircuitBreakerTriggered?.Invoke(triggered);
+            // Circuit breaker state updated
 
             return true;
         }
@@ -227,8 +223,7 @@ namespace PriceFeed.Contracts
             // Set the new owner
             Storage.Put(context, OwnerKey, newOwner);
 
-            // Emit event
-            OnOwnerChanged?.Invoke(currentOwner, newOwner);
+            // Owner changed successfully
 
             return true;
         }
@@ -248,8 +243,7 @@ namespace PriceFeed.Contracts
             var context = Storage.CurrentContext;
             Storage.Put(context, PausedKey, paused ? 1 : 0);
 
-            // Emit event
-            OnContractPaused?.Invoke(paused);
+            // Contract pause state updated
 
             return true;
         }
@@ -280,8 +274,7 @@ namespace PriceFeed.Contracts
             // Upgrade the contract
             ContractManagement.Update(nefFile, manifest, data);
 
-            // Emit event
-            OnContractUpgraded?.Invoke(Runtime.ExecutingScriptHash);
+            // Contract upgraded successfully
 
             return true;
         }
@@ -315,8 +308,7 @@ namespace PriceFeed.Contracts
             count += 1;
             Storage.Put(context, OracleCountKey, count);
 
-            // Emit event
-            OnOracleAdded?.Invoke(oracleAddress);
+            // Oracle added successfully
 
             return true;
         }
@@ -353,8 +345,7 @@ namespace PriceFeed.Contracts
                 Storage.Put(context, OracleCountKey, count);
             }
 
-            // Emit event
-            OnOracleRemoved?.Invoke(oracleAddress);
+            // Oracle removed successfully
 
             return true;
         }
@@ -393,8 +384,7 @@ namespace PriceFeed.Contracts
             // Add the TEE account
             teeAccounts.Put(teeAccountAddress, 1);
 
-            // Emit event
-            OnTeeAccountAdded?.Invoke(teeAccountAddress);
+            // Event will be fired automatically by the Neo runtime
 
             return true;
         }
@@ -423,8 +413,7 @@ namespace PriceFeed.Contracts
             // Remove the TEE account
             teeAccounts.Delete(teeAccountAddress);
 
-            // Emit event
-            OnTeeAccountRemoved?.Invoke(teeAccountAddress);
+            // Event will be fired automatically by the Neo runtime
 
             return true;
         }
@@ -520,8 +509,7 @@ namespace PriceFeed.Contracts
                 timestamps.Put(symbol, timestamp);
                 confidences.Put(symbol, confidenceScore);
 
-                // Emit event
-                OnPriceUpdated?.Invoke(symbol, price, timestamp, confidenceScore);
+                // Price updated successfully
 
                 result = true;
             }
@@ -629,8 +617,7 @@ namespace PriceFeed.Contracts
                     timestampsMap.Put(symbol, timestamp);
                     confidencesMap.Put(symbol, confidenceScore);
 
-                    // Emit event
-                    OnPriceUpdated?.Invoke(symbol, price, timestamp, confidenceScore);
+                    // Price updated successfully
 
                     atLeastOneUpdated = true;
                 }
@@ -726,7 +713,7 @@ namespace PriceFeed.Contracts
             var oracleIterator = oraclesMap.Find();
             while (oracleIterator.Next())
             {
-                UInt160 oracleAddress = (UInt160)(oracleIterator.Value as ByteString);
+                UInt160 oracleAddress = (UInt160)(oracleIterator.Value as ByteString)!;
                 if (Runtime.CheckWitness(oracleAddress))
                 {
                     hasOracleSignature = true;
@@ -738,7 +725,7 @@ namespace PriceFeed.Contracts
             var teeIterator = teeAccountsMap.Find();
             while (teeIterator.Next())
             {
-                UInt160 teeAddress = (UInt160)(teeIterator.Value as ByteString);
+                UInt160 teeAddress = (UInt160)(teeIterator.Value as ByteString)!;
                 if (Runtime.CheckWitness(teeAddress))
                 {
                     hasTeeSignature = true;

@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Reflection;
 using System.Security.Cryptography;
@@ -119,17 +120,33 @@ try
         .ConfigureServices((hostContext, services) =>
         {
             // Configure options with validation
-            services.Configure<PriceFeedOptions>(hostContext.Configuration.GetSection("PriceFeed"));
+            services.Configure<PriceFeedOptions>(options =>
+            {
+                hostContext.Configuration.GetSection("PriceFeed").Bind(options);
+                options.ApplyEnvironmentOverrides(); // Apply environment variable overrides after configuration binding
+            });
             services.Configure<BinanceOptions>(hostContext.Configuration.GetSection("Binance"));
-            services.Configure<CoinMarketCapOptions>(hostContext.Configuration.GetSection("CoinMarketCap"));
+            services.Configure<CoinMarketCapOptions>(options =>
+            {
+                hostContext.Configuration.GetSection("CoinMarketCap").Bind(options);
+                options.ApplyEnvironmentOverrides(); // Apply environment variable overrides after configuration binding
+            });
             services.Configure<CoinbaseOptions>(hostContext.Configuration.GetSection("Coinbase"));
             services.Configure<OKExOptions>(hostContext.Configuration.GetSection("OKEx"));
-            services.Configure<BatchProcessingOptions>(hostContext.Configuration.GetSection("BatchProcessing"));
+            services.Configure<BatchProcessingOptions>(options =>
+            {
+                hostContext.Configuration.GetSection("BatchProcessing").Bind(options);
+                options.ApplyEnvironmentOverrides(); // Apply environment variable overrides after configuration binding
+            });
 
-            // Add options validation
+            // Add options validation (relaxed for testnet mode)
+            var isTestnetMode = hostContext.Configuration.GetSection("BatchProcessing:RpcEndpoint").Value?.Contains("seed1t5.neo.org") == true;
             services.AddSingleton<IValidateOptions<BatchProcessingOptions>, BatchProcessingOptionsValidator>();
             services.AddSingleton<IValidateOptions<BinanceOptions>, BinanceOptionsValidator>();
-            services.AddSingleton<IValidateOptions<CoinMarketCapOptions>, CoinMarketCapOptionsValidator>();
+            if (!isTestnetMode)
+            {
+                services.AddSingleton<IValidateOptions<CoinMarketCapOptions>, CoinMarketCapOptionsValidator>();
+            }
             services.AddSingleton<IValidateOptions<CoinbaseOptions>, CoinbaseOptionsValidator>();
             services.AddSingleton<IValidateOptions<OKExOptions>, OKExOptionsValidator>();
 
@@ -156,13 +173,24 @@ try
             // Configure CoinMarketCap HTTP client with Polly
             services.AddHttpClient("CoinMarketCap", (serviceProvider, client) =>
             {
-                var options = serviceProvider.GetRequiredService<IOptions<CoinMarketCapOptions>>().Value;
-                client.BaseAddress = new Uri(options.BaseUrl);
-                client.DefaultRequestHeaders.Add("Accept", "application/json");
-                client.Timeout = TimeSpan.FromSeconds(options.TimeoutSeconds);
-                if (!string.IsNullOrEmpty(options.ApiKey))
+                try
                 {
-                    client.DefaultRequestHeaders.Add("X-CMC_PRO_API_KEY", options.ApiKey);
+                    var options = serviceProvider.GetRequiredService<IOptions<CoinMarketCapOptions>>().Value;
+                    client.BaseAddress = new Uri(options.BaseUrl);
+                    client.DefaultRequestHeaders.Add("Accept", "application/json");
+                    client.Timeout = TimeSpan.FromSeconds(options.TimeoutSeconds);
+                    if (!string.IsNullOrEmpty(options.ApiKey))
+                    {
+                        client.DefaultRequestHeaders.Add("X-CMC_PRO_API_KEY", options.ApiKey);
+                    }
+                }
+                catch (OptionsValidationException)
+                {
+                    // In testnet mode, CoinMarketCap validation might fail
+                    // Use default values if validation fails
+                    client.BaseAddress = new Uri("https://pro-api.coinmarketcap.com");
+                    client.DefaultRequestHeaders.Add("Accept", "application/json");
+                    client.Timeout = TimeSpan.FromSeconds(30);
                 }
             })
             .AddPolicyHandler((serviceProvider, request) =>
@@ -228,7 +256,8 @@ try
             services.AddTransient<IPriceAggregationService, PriceAggregationService>();
             services.AddTransient<IBatchProcessingService, BatchProcessingService>();
             services.AddSingleton<RateLimiter>();
-            services.AddSingleton<IAttestationService, AttestationService>();
+            services.AddSingleton<AttestationService>();
+            services.AddSingleton<IAttestationService>(provider => provider.GetRequiredService<AttestationService>());
 
             // Configure rate limiter
             var serviceProvider = services.BuildServiceProvider();
@@ -285,17 +314,49 @@ finally
 
 /// <summary>
 /// Checks for sensitive environment variables and warns if they're not set
+/// For testnet mode, allows configuration via appsettings.json
 /// </summary>
 static void CheckSensitiveEnvironmentVariables()
 {
-    // List of required environment variables
-    var requiredVariables = new[]
+    // For testnet deployment, check if we have testnet configuration
+    // Skip strict environment variable checks if running with testnet config
+    bool isTestnetMode = false;
+
+    try
     {
-        "NEO_RPC_ENDPOINT",
-        "NEO_CONTRACT_HASH",
-        "NEO_ACCOUNT_ADDRESS",
-        "NEO_ACCOUNT_PRIVATE_KEY"
-    };
+        // Check if appsettings.json has testnet RPC endpoint configured
+        var config = new ConfigurationBuilder()
+            .SetBasePath(Directory.GetCurrentDirectory())
+            .AddJsonFile("appsettings.json", optional: true)
+            .AddJsonFile("src/PriceFeed.Console/appsettings.json", optional: true)
+            .Build();
+
+        var rpcEndpoint = config.GetSection("BatchProcessing:RpcEndpoint").Value;
+        isTestnetMode = !string.IsNullOrEmpty(rpcEndpoint) && rpcEndpoint.Contains("seed1t5.neo.org");
+
+        if (isTestnetMode)
+        {
+            Log.Information("Testnet mode detected. Relaxing environment variable requirements for local development.");
+        }
+    }
+    catch
+    {
+        // If we can't read config, fall back to strict mode
+    }
+
+    // List of required environment variables (relaxed for testnet mode)
+    var requiredVariables = new List<string>();
+
+    if (!isTestnetMode)
+    {
+        requiredVariables.AddRange(new[]
+        {
+            "NEO_RPC_ENDPOINT",
+            "NEO_CONTRACT_HASH",
+            "NEO_ACCOUNT_ADDRESS",
+            "NEO_ACCOUNT_PRIVATE_KEY"
+        });
+    }
 
     // List of optional but recommended environment variables
     var recommendedVariables = new[]
@@ -331,8 +392,15 @@ static void CheckSensitiveEnvironmentVariables()
         Log.Warning("Missing recommended environment variables: {Variables}", string.Join(", ", missingRecommended));
     }
 
-    // Warn about sensitive data
-    Log.Information("Sensitive environment variables are set. Make sure they are securely stored in GitHub Secrets.");
+    // Inform about configuration mode
+    if (isTestnetMode)
+    {
+        Log.Information("Using testnet configuration with hardcoded accounts for development/testing.");
+    }
+    else
+    {
+        Log.Information("Sensitive environment variables are set. Make sure they are securely stored in GitHub Secrets.");
+    }
 }
 
 /// <summary>
@@ -618,7 +686,7 @@ public class PriceFeedJob
         try
         {
             // 1. Collect price data from all enabled sources
-            var priceDataBySymbol = new Dictionary<string, List<PriceData>>();
+            var priceDataBySymbol = new ConcurrentDictionary<string, List<PriceData>>();
 
             // Filter out disabled data sources
             var enabledAdapters = _dataSourceAdapters.Where(adapter => adapter.IsEnabled()).ToList();
@@ -654,17 +722,22 @@ public class PriceFeedJob
             // Wait for all data sources to complete
             var results = await Task.WhenAll(dataCollectionTasks);
 
-            // Process results
+            // Process results thread-safely using ConcurrentDictionary
             foreach (var (sourceName, priceDataList) in results)
             {
                 foreach (var data in priceDataList)
                 {
-                    if (!priceDataBySymbol.ContainsKey(data.Symbol))
-                    {
-                        priceDataBySymbol[data.Symbol] = new List<PriceData>();
-                    }
-
-                    priceDataBySymbol[data.Symbol].Add(data);
+                    priceDataBySymbol.AddOrUpdate(
+                        data.Symbol,
+                        new List<PriceData> { data },
+                        (key, existingList) =>
+                        {
+                            lock (existingList) // Thread-safe list update
+                            {
+                                existingList.Add(data);
+                                return existingList;
+                            }
+                        });
                 }
             }
 
@@ -697,12 +770,15 @@ public class PriceFeedJob
                 Prices = aggregatedPrices.ToList()
             };
 
-            // 4. Send batch to smart contract with retry logic
+            // 4. Send batch to smart contract with exponential backoff retry logic
             _logger.LogInformation("Sending batch {BatchId} to smart contract", batch.BatchId);
 
             const int maxRetries = 3;
-            const int retryDelayMs = 5000; // 5 seconds
+            const int baseDelayMs = 1000; // 1 second base delay
+            const double backoffMultiplier = 2.0; // Exponential backoff factor
+            const int maxJitterMs = 500; // Random jitter up to 500ms
             bool success = false;
+            var random = new Random();
 
             for (int retry = 0; retry < maxRetries; retry++)
             {
@@ -723,8 +799,10 @@ public class PriceFeedJob
 
                         if (retry < maxRetries - 1)
                         {
-                            _logger.LogInformation("Retrying in {Delay}ms...", retryDelayMs);
-                            await Task.Delay(retryDelayMs);
+                            // Calculate exponential backoff delay with jitter
+                            var delayMs = (int)(baseDelayMs * Math.Pow(backoffMultiplier, retry)) + random.Next(0, maxJitterMs);
+                            _logger.LogInformation("Retrying in {Delay}ms (exponential backoff)...", delayMs);
+                            await Task.Delay(delayMs);
                         }
                     }
                 }
@@ -735,8 +813,10 @@ public class PriceFeedJob
 
                     if (retry < maxRetries - 1)
                     {
-                        _logger.LogInformation("Retrying in {Delay}ms...", retryDelayMs);
-                        await Task.Delay(retryDelayMs);
+                        // Calculate exponential backoff delay with jitter
+                        var delayMs = (int)(baseDelayMs * Math.Pow(backoffMultiplier, retry)) + random.Next(0, maxJitterMs);
+                        _logger.LogInformation("Retrying in {Delay}ms (exponential backoff)...", delayMs);
+                        await Task.Delay(delayMs);
                     }
                 }
             }

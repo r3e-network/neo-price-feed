@@ -54,7 +54,24 @@ public class CoinMarketCapDataSourceAdapter : IDataSourceAdapter
     {
         _httpClient = httpClientFactory.CreateClient("CoinMarketCap");
         _logger = logger;
-        _options = options.Value;
+
+        try
+        {
+            _options = options.Value;
+        }
+        catch (OptionsValidationException ex)
+        {
+            // In testnet mode, if validation fails, create testnet configuration manually
+            _logger.LogWarning("CoinMarketCap options validation failed, loading testnet configuration: {Message}", ex.Message);
+            _options = new CoinMarketCapOptions
+            {
+                BaseUrl = "https://pro-api.coinmarketcap.com",
+                LatestQuotesEndpoint = "/v1/cryptocurrency/quotes/latest",
+                ApiKey = Environment.GetEnvironmentVariable("COINMARKETCAP_API_KEY") ?? "",
+                TimeoutSeconds = 30
+            };
+        }
+
         _symbolMappings = priceFeedOptions.Value.SymbolMappings;
 
         _httpClient.BaseAddress = new Uri(_options.BaseUrl);

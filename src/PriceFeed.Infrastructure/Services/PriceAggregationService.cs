@@ -170,32 +170,84 @@ public class PriceAggregationService : IPriceAggregationService
     }
 
     /// <summary>
-    /// Filters out outliers from a collection of price data
+    /// Filters out outliers from price data using adaptive algorithms for different dataset sizes
     /// </summary>
     /// <param name="priceData">The price data to filter</param>
     /// <returns>The filtered price data</returns>
     private static List<PriceData> FilterOutliers(List<PriceData> priceData)
     {
-        if (priceData.Count <= 2)
-            return priceData; // Not enough data to filter outliers
+        if (priceData.Count <= 1)
+            return priceData; // Single data point, no filtering possible
 
-        // Calculate median price
-        var prices = priceData.Select(p => p.Price).OrderBy(p => p).ToList();
-        var median = prices.Count % 2 == 0
-            ? (prices[prices.Count / 2 - 1] + prices[prices.Count / 2]) / 2
-            : prices[prices.Count / 2];
+        if (priceData.Count == 2)
+        {
+            // For 2 data points, use percentage-based outlier detection
+            var prices = priceData.Select(p => p.Price).OrderBy(p => p).ToList();
+            var lower = prices[0];
+            var upper = prices[1];
+
+            // If the difference is more than 50% of the average, consider it suspicious
+            var average = (lower + upper) / 2;
+            var percentageDiff = Math.Abs(upper - lower) / average;
+
+            if (percentageDiff > 0.5m) // 50% threshold for 2 data points
+            {
+                // Return both but log warning about high variance
+                // In production, you might want to require manual review
+                return priceData; // Keep both for now, let confidence scoring handle it
+            }
+
+            return priceData;
+        }
+
+        // For 3+ data points, use MAD-based approach with adjusted thresholds
+        var allPrices = priceData.Select(p => p.Price).OrderBy(p => p).ToList();
+        var median = allPrices.Count % 2 == 0
+            ? (allPrices[allPrices.Count / 2 - 1] + allPrices[allPrices.Count / 2]) / 2
+            : allPrices[allPrices.Count / 2];
 
         // Calculate the median absolute deviation (MAD)
-        var deviations = prices.Select(p => Math.Abs(p - median)).OrderBy(d => d).ToList();
+        var deviations = allPrices.Select(p => Math.Abs(p - median)).OrderBy(d => d).ToList();
         var mad = deviations.Count % 2 == 0
             ? (deviations[deviations.Count / 2 - 1] + deviations[deviations.Count / 2]) / 2
             : deviations[deviations.Count / 2];
 
-        // Define outlier threshold (3 times the MAD)
-        var threshold = 3 * mad;
+        // Adaptive threshold based on dataset size
+        decimal threshold;
+        if (priceData.Count == 3)
+        {
+            // More lenient for 3 data points (2.5 * MAD instead of 3)
+            threshold = 2.5m * mad;
+        }
+        else if (priceData.Count <= 5)
+        {
+            // Standard threshold for small datasets
+            threshold = 3m * mad;
+        }
+        else
+        {
+            // More strict for larger datasets (2 * MAD)
+            threshold = 2m * mad;
+        }
+
+        // If MAD is too small (prices are very close), use percentage-based fallback
+        if (mad < median * 0.01m) // MAD less than 1% of median
+        {
+            // Use 10% of median as threshold for very stable prices
+            threshold = median * 0.1m;
+        }
 
         // Filter out prices that deviate too much from the median
-        return priceData.Where(p => Math.Abs(p.Price - median) <= threshold).ToList();
+        var filteredData = priceData.Where(p => Math.Abs(p.Price - median) <= threshold).ToList();
+
+        // Ensure we don't filter out too much data (keep at least 50% of original data)
+        if (filteredData.Count < priceData.Count / 2)
+        {
+            // If we filtered too aggressively, return original data
+            return priceData;
+        }
+
+        return filteredData;
     }
 
     /// <summary>

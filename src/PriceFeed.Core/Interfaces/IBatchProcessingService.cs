@@ -18,6 +18,6 @@ public interface IBatchProcessingService
     /// Gets the status of a previously submitted batch
     /// </summary>
     /// <param name="batchId">The ID of the batch to check</param>
-    /// <returns>The status of the batch</returns>
-    Task<BatchStatus> GetBatchStatusAsync(Guid batchId);
+    /// <returns>The status information of the batch</returns>
+    Task<BatchStatusInfo> GetBatchStatusAsync(Guid batchId);
 }

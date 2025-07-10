@@ -12,6 +12,10 @@ public class BatchProcessingOptionsValidator : IValidateOptions<BatchProcessingO
     {
         var failures = new List<string>();
 
+        // Check if this is testnet mode (relaxed validation)
+        bool isTestnetMode = !string.IsNullOrEmpty(options.RpcEndpoint) &&
+                           options.RpcEndpoint.Contains("seed1t5.neo.org", StringComparison.OrdinalIgnoreCase);
+
         // Validate RPC endpoint
         if (string.IsNullOrWhiteSpace(options.RpcEndpoint))
         {
@@ -21,17 +25,17 @@ public class BatchProcessingOptionsValidator : IValidateOptions<BatchProcessingO
         {
             failures.Add("RPC endpoint must be a valid URI");
         }
-        else if (uri.Scheme != "https" && !uri.Host.Equals("localhost", StringComparison.OrdinalIgnoreCase))
+        else if (!isTestnetMode && uri.Scheme != "https" && !uri.Host.Equals("localhost", StringComparison.OrdinalIgnoreCase))
         {
             failures.Add("RPC endpoint must use HTTPS for production (except localhost)");
         }
 
-        // Validate contract script hash
+        // Validate contract script hash (relaxed for testnet)
         if (string.IsNullOrWhiteSpace(options.ContractScriptHash))
         {
             failures.Add("Contract script hash must be configured");
         }
-        else if (options.ContractScriptHash.Contains("MUST_BE_SET", StringComparison.OrdinalIgnoreCase))
+        else if (!isTestnetMode && options.ContractScriptHash.Contains("MUST_BE_SET", StringComparison.OrdinalIgnoreCase))
         {
             failures.Add("Contract script hash contains placeholder value");
         }
@@ -54,7 +58,7 @@ public class BatchProcessingOptionsValidator : IValidateOptions<BatchProcessingO
         {
             failures.Add("TEE account private key must be configured");
         }
-        else if (options.TeeAccountPrivateKey.Length < 52)
+        else if (!isTestnetMode && options.TeeAccountPrivateKey.Length < 52)
         {
             failures.Add("TEE account private key appears to be invalid");
         }
@@ -73,7 +77,7 @@ public class BatchProcessingOptionsValidator : IValidateOptions<BatchProcessingO
         {
             failures.Add("Master account private key must be configured");
         }
-        else if (options.MasterAccountPrivateKey.Length < 52)
+        else if (!isTestnetMode && options.MasterAccountPrivateKey.Length < 52)
         {
             failures.Add("Master account private key appears to be invalid");
         }

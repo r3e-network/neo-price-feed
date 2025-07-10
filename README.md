@@ -26,6 +26,18 @@ For detailed information, see:
 [![Neo](https://img.shields.io/badge/Neo-N3-green.svg)](https://neo.org/)
 [![Documentation](https://img.shields.io/badge/docs-GitHub%20Pages-blue.svg)](https://r3e-network.github.io/neo-price-feed/)
 
+## 🚀 TestNet Deployment Status
+
+**✅ DEPLOYED ON NEO N3 TESTNET**
+
+- **Contract Hash**: `0xc14ffc3f28363fe59645873b28ed3ed8ccb774cc`
+- **Transaction**: `0x15ccc11dbe781c6878d04a713fb04bc7a9c1f162fee97d2f03014eca918c4a53`
+- **Network**: Neo N3 TestNet
+- **Status**: ⚠️ Needs Initialization
+
+📋 **Quick Start**: See [INITIALIZATION_GUIDE.md](INITIALIZATION_GUIDE.md) to initialize the contract.
+📊 **Explorer**: [View on TestNet](https://testnet.explorer.onegate.space/contract/0xc14ffc3f28363fe59645873b28ed3ed8ccb774cc)
+
 ## Features
 
 - **Multi-Source Data Collection**: Fetches price data from multiple sources:

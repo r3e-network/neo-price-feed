@@ -30,7 +30,19 @@ public class CoinMarketCapOptions
     /// </summary>
     public CoinMarketCapOptions()
     {
-        // Try to get API key from environment variable
-        ApiKey = Environment.GetEnvironmentVariable("COINMARKETCAP_API_KEY");
+        // Environment variables will only override configuration if explicitly set
+        // This allows appsettings.json to work properly in testnet mode
+    }
+
+    /// <summary>
+    /// Called after configuration binding to apply environment variable overrides
+    /// </summary>
+    public void ApplyEnvironmentOverrides()
+    {
+        var envApiKey = Environment.GetEnvironmentVariable("COINMARKETCAP_API_KEY");
+        if (!string.IsNullOrEmpty(envApiKey))
+        {
+            ApiKey = envApiKey;
+        }
     }
 }
