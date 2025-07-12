@@ -99,6 +99,12 @@ try
         return 0;
     }
 
+    // Test mock price feed mode
+    if (commandLineArgs.Contains("--test-mock-price-feed"))
+    {
+        return await MockPriceFeedTest.RunTest();
+    }
+
     // Check if we should skip health checks
     bool skipHealthChecks = commandLineArgs.Contains("--skip-health-checks");
 

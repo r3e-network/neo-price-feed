@@ -282,16 +282,16 @@ namespace PriceFeed.Tests
             // Verify BTC price
             var btcPrice = capturedBatch.Prices.FirstOrDefault(p => p.Symbol == "BTCUSDT");
             Assert.NotNull(btcPrice);
-            // The aggregated price should be the average of all sources
+            // The aggregated price should be close to the average of all sources
             // (50000 + 50500 + 50200 + 50300) / 4 = 50250
-            Assert.Equal(50250m, btcPrice.Price);
+            Assert.True(Math.Abs(btcPrice.Price - 50250m) < 1m, $"Expected price around 50250, but got {btcPrice.Price}");
 
             // Verify ETH price
             var ethPrice = capturedBatch.Prices.FirstOrDefault(p => p.Symbol == "ETHUSDT");
             Assert.NotNull(ethPrice);
-            // The aggregated price should be the average of all sources
+            // The aggregated price should be close to the average of all sources
             // (3000 + 3050 + 3020 + 3030) / 4 = 3025
-            Assert.Equal(3025m, ethPrice.Price);
+            Assert.True(Math.Abs(ethPrice.Price - 3025m) < 1m, $"Expected price around 3025, but got {ethPrice.Price}");
         }
 
         private void MockBinanceResponses()
@@ -475,31 +475,35 @@ namespace PriceFeed.Tests
 
         private void MockCoinbaseResponses()
         {
-            // Mock Coinbase responses
-            var btcResponse = new HttpResponseMessage
+            // Mock Coinbase exchange rates responses (new endpoint)
+            var btcExchangeRatesResponse = new HttpResponseMessage
             {
                 StatusCode = HttpStatusCode.OK,
                 Content = new StringContent(JsonConvert.SerializeObject(new
                 {
                     data = new
                     {
-                        @base = "BTC",
-                        currency = "USD",
-                        amount = "50200.00"
+                        currency = "BTC",
+                        rates = new Dictionary<string, string>
+                        {
+                            { "USD", "0.0000199203" } // 1/50200 = 0.0000199203 (rate for BTC to USD)
+                        }
                     }
                 }))
             };
 
-            var ethResponse = new HttpResponseMessage
+            var ethExchangeRatesResponse = new HttpResponseMessage
             {
                 StatusCode = HttpStatusCode.OK,
                 Content = new StringContent(JsonConvert.SerializeObject(new
                 {
                     data = new
                     {
-                        @base = "ETH",
-                        currency = "USD",
-                        amount = "3020.00"
+                        currency = "ETH",
+                        rates = new Dictionary<string, string>
+                        {
+                            { "USD", "0.000331126" } // 1/3020 = 0.000331126 (rate for ETH to USD)
+                        }
                     }
                 }))
             };
@@ -510,9 +514,10 @@ namespace PriceFeed.Tests
                     "SendAsync",
                     ItExpr.Is<HttpRequestMessage>(req =>
                         req.RequestUri!.ToString().Contains("coinbase.com") &&
-                        req.RequestUri!.ToString().Contains("BTC-USD")),
+                        req.RequestUri!.ToString().Contains("exchange-rates") &&
+                        req.RequestUri!.ToString().Contains("currency=BTC")),
                     ItExpr.IsAny<CancellationToken>())
-                .ReturnsAsync(btcResponse);
+                .ReturnsAsync(btcExchangeRatesResponse);
 
             _httpMessageHandlerMock
                 .Protected()
@@ -520,9 +525,10 @@ namespace PriceFeed.Tests
                     "SendAsync",
                     ItExpr.Is<HttpRequestMessage>(req =>
                         req.RequestUri!.ToString().Contains("coinbase.com") &&
-                        req.RequestUri!.ToString().Contains("ETH-USD")),
+                        req.RequestUri!.ToString().Contains("exchange-rates") &&
+                        req.RequestUri!.ToString().Contains("currency=ETH")),
                     ItExpr.IsAny<CancellationToken>())
-                .ReturnsAsync(ethResponse);
+                .ReturnsAsync(ethExchangeRatesResponse);
         }
 
         private void MockOKExResponses()

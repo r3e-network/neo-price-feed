@@ -67,7 +67,7 @@ jobs:
 
           # Generate a new Neo account and write directly to a secure file
           # This prevents the sensitive information from appearing in logs
-          dotnet run --project PriceFeed.Console/PriceFeed.Console.csproj --configuration Release -- --generate-account --secure-output ./temp_secrets/account.txt
+          dotnet run --project src/PriceFeed.Console/PriceFeed.Console.csproj --configuration Release -- --generate-account --secure-output ./temp_secrets/account.txt
 
           # Read the secure file to extract address and WIF
           if [ -f "./temp_secrets/account.txt" ]; then
@@ -109,13 +109,13 @@ jobs:
           mkdir -p attestations
 
           # Run the attestation creator
-          dotnet run --project PriceFeed.Console/PriceFeed.Console.csproj --configuration Release -- --create-account-attestation --account-address ${{ env.ADDRESS }}
+          dotnet run --project src/PriceFeed.Console/PriceFeed.Console.csproj --configuration Release -- --create-account-attestation --account-address ${{ env.ADDRESS }}
 
           echo "Created account attestation"
 
       - name: Upload Attestation as Artifact
         if: steps.check-account.outputs.account_exists != 'true'
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: account-attestation
           path: attestations/account_attestation.json
@@ -225,7 +225,7 @@ jobs:
 
       - name: Upload Recovery Instructions as Artifact
         if: steps.check-account.outputs.account_exists != 'true'
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: neo-account-recovery
           path: backup/

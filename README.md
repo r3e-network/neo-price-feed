@@ -2,6 +2,15 @@
 
 A production-ready price feed service for Neo N3 blockchain that leverages a Trusted Execution Environment (TEE). The service fetches data from multiple sources, aggregates it, and submits it to a smart contract on-chain using a dual-signature transaction system.
 
+## ⚠️ Important: API Accessibility Notice
+
+Many popular cryptocurrency APIs have accessibility restrictions due to regional regulations, API key requirements, or domain blocks. Please see [Accessible APIs Guide](docs/accessible-apis.md) for information about which data sources are accessible in your region and recommended alternatives.
+
+**Quick Start with Accessible APIs:**
+- Use the `appsettings.accessible.json` configuration for maximum compatibility
+- Primary recommended sources: CoinGecko, Kraken
+- See the [accessibility guide](docs/accessible-apis.md) for detailed setup instructions
+
 ## Security Model
 
 This service leverages a Trusted Execution Environment (TEE) for secure operation:
@@ -41,10 +50,12 @@ For detailed information, see:
 ## Features
 
 - **Multi-Source Data Collection**: Fetches price data from multiple sources:
-  - Binance
-  - CoinMarketCap
-  - Coinbase
-  - OKEx
+  - CoinGecko (✅ Accessible)
+  - Kraken (✅ Accessible)
+  - Coinbase (✅ Partially Accessible)
+  - Binance (❌ Regionally Restricted)
+  - CoinMarketCap (❌ Requires API Key)
+  - OKEx (❌ Domain Restrictions)
 - **Advanced Aggregation**: Aggregates price data using volume-weighted average or simple average
 - **Confidence Scoring**: Calculates confidence scores based on standard deviation and number of sources
 - **Batch Processing**: Sends batched price updates to a Neo smart contract
@@ -63,7 +74,7 @@ The solution consists of two main components:
 ### 1. Price Feed Service with TEE
 
 A .NET console application that runs in a Trusted Execution Environment (TEE). The service:
-- Collects price data from multiple sources (Binance, CoinMarketCap, Coinbase, OKEx)
+- Collects price data from multiple sources (CoinGecko, Kraken, Coinbase, and others)
 - Aggregates the data with confidence scoring
 - Uses a dual-signature system with TEE and Master accounts
 - Signs and submits transactions to the blockchain

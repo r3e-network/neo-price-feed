@@ -73,13 +73,13 @@ This smart contract serves as a decentralized price oracle for the Neo blockchai
 1. Compile the contract using the Neo Compiler:
 
 ```bash
-dotnet publish PriceFeed.Contracts.csproj -c Release
+nccs
 ```
 
 2. Deploy the contract using Neo Express:
 
 ```bash
-neoxp contract deploy bin/Release/net6.0/PriceFeed.Contracts.nef account1 --force
+neoxp contract deploy bin\sc\PriceFeed.Oracle.nef account1 --force
 ```
 
 3. Initialize the contract:

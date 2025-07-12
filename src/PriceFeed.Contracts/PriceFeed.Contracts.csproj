@@ -15,4 +15,10 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
+  <!-- Add Neo compiler integration -->
+  <Target Name="PostBuild" AfterTargets="Build">
+    <Message Text="Start NeoContract converter, Source File: $(ProjectPath)" Importance="high"></Message>
+    <Exec Command="nccs &quot;$(ProjectPath)&quot;" />
+  </Target>
+
 </Project>
