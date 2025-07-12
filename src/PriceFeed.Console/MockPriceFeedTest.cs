@@ -15,7 +15,7 @@ namespace PriceFeed.Console
         public static async Task<int> RunTest()
         {
             Log.Information("Running mock price feed test...");
-            
+
             // Create a test batch with mock data
             var batch = new PriceBatch
             {
@@ -102,7 +102,7 @@ namespace PriceFeed.Console
                     services.AddHttpClient();
                     services.AddMemoryCache();
                     services.AddScoped<IAttestationService, AttestationService>();
-                    
+
                     // Configure HTTP clients
                     services.AddHttpClient("CoinGecko", client =>
                     {
@@ -141,7 +141,7 @@ namespace PriceFeed.Console
                 .Build();
 
             var batchProcessingService = mockHost.Services.GetRequiredService<IBatchProcessingService>();
-            
+
             try
             {
                 await batchProcessingService.ProcessBatchAsync(batch);
