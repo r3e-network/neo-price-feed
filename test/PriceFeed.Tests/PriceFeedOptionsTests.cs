@@ -8,13 +8,14 @@ namespace PriceFeed.Tests
     public class PriceFeedOptionsTests
     {
         [Fact]
-        public void Constructor_WithValidSymbols_ShouldParseCorrectly()
+        public void ApplyEnvironmentOverrides_WithValidSymbols_ShouldParseCorrectly()
         {
             // Arrange
             Environment.SetEnvironmentVariable("SYMBOLS", "BTCUSDT,ETHBTC,NEOBTC");
 
             // Act
             var options = new PriceFeedOptions();
+            options.ApplyEnvironmentOverrides();
 
             // Assert
             Assert.Equal(3, options.Symbols.Count);
@@ -27,47 +28,51 @@ namespace PriceFeed.Tests
         }
 
         [Fact]
-        public void Constructor_WithInvalidSymbols_ShouldFilterThem()
+        public void ApplyEnvironmentOverrides_WithInvalidSymbols_ShouldFilterThem()
         {
             // Arrange
             Environment.SetEnvironmentVariable("SYMBOLS", "BTCUSDT,ETH-BTC,123,AB");
 
             // Act
             var options = new PriceFeedOptions();
+            options.ApplyEnvironmentOverrides();
 
-            // Assert //?
+            // Assert - sanitized symbols
             Assert.Contains("BTCUSDT", options.Symbols);
-            Assert.Contains("123", options.Symbols);
-            Assert.Contains("ETHBTC", options.Symbols);
+            Assert.Contains("123", options.Symbols); // Valid after sanitization
+            Assert.Contains("ETHBTC", options.Symbols); // ETH-BTC becomes ETHBTC
+            Assert.DoesNotContain("AB", options.Symbols); // Too short after sanitization
 
             // Cleanup
             Environment.SetEnvironmentVariable("SYMBOLS", null);
         }
 
         [Fact]
-        public void Constructor_WithNoSymbols_ShouldUseDefaults()
+        public void ApplyEnvironmentOverrides_WithNoSymbols_ShouldUseDefaults()
         {
             // Arrange
             Environment.SetEnvironmentVariable("SYMBOLS", null);
 
             // Act
             var options = new PriceFeedOptions();
+            options.ApplyEnvironmentOverrides();
 
-            // Assert
+            // Assert - default symbols from ApplyEnvironmentOverrides
             Assert.Equal(3, options.Symbols.Count);
-            Assert.Contains("NEOBTC", options.Symbols);
-            Assert.Contains("NEOUSDT", options.Symbols);
             Assert.Contains("BTCUSDT", options.Symbols);
+            Assert.Contains("ETHUSDT", options.Symbols);
+            Assert.Contains("NEOUSDT", options.Symbols);
         }
 
         [Fact]
-        public void Constructor_WithDuplicateSymbols_ShouldRemoveDuplicates()
+        public void ApplyEnvironmentOverrides_WithDuplicateSymbols_ShouldRemoveDuplicates()
         {
             // Arrange
             Environment.SetEnvironmentVariable("SYMBOLS", "BTCUSDT,btcusdt,ETHBTC");
 
             // Act
             var options = new PriceFeedOptions();
+            options.ApplyEnvironmentOverrides();
 
             // Assert
             Assert.Equal(2, options.Symbols.Count);

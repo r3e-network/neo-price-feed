@@ -13,6 +13,7 @@ using Neo.Cryptography.ECC;
 using Neo.SmartContract;
 using Neo.Wallets;
 using Newtonsoft.Json;
+using PriceFeed.Core.Configuration;
 using PriceFeed.Core.Interfaces;
 using PriceFeed.Core.Models;
 using PriceFeed.Core.Options;
@@ -108,6 +109,20 @@ try
     // Check if we should skip health checks
     bool skipHealthChecks = commandLineArgs.Contains("--skip-health-checks");
 
+    // Validate required environment variables unless in development mode
+    if (!EnvironmentConfiguration.IsDevelopmentMode())
+    {
+        try
+        {
+            EnvironmentConfiguration.ValidateRequiredEnvironmentVariables();
+        }
+        catch (InvalidOperationException ex)
+        {
+            Log.Error(ex, "Missing required environment variables");
+            return 1;
+        }
+    }
+
     Log.Information("Starting PriceFeed job");
 
     // Check for sensitive environment variables
@@ -120,7 +135,7 @@ try
         {
             config.AddJsonFile("appsettings.json", optional: true, reloadOnChange: true);
             config.AddJsonFile($"appsettings.{hostContext.HostingEnvironment.EnvironmentName}.json", optional: true, reloadOnChange: true);
-            config.AddEnvironmentVariables();
+            config.AddEnvironmentVariableOverrides();
             config.AddCommandLine(commandLineArgs);
         })
         .ConfigureServices((hostContext, services) =>
@@ -139,6 +154,8 @@ try
             });
             services.Configure<CoinbaseOptions>(hostContext.Configuration.GetSection("Coinbase"));
             services.Configure<OKExOptions>(hostContext.Configuration.GetSection("OKEx"));
+            services.Configure<CoinGeckoOptions>(hostContext.Configuration.GetSection("CoinGecko"));
+            services.Configure<KrakenOptions>(hostContext.Configuration.GetSection("Kraken"));
             services.Configure<BatchProcessingOptions>(options =>
             {
                 hostContext.Configuration.GetSection("BatchProcessing").Bind(options);
@@ -246,6 +263,32 @@ try
             {
                 var logger = serviceProvider.GetRequiredService<ILogger<Program>>();
                 return ResiliencePolicies.GetCombinedPolicy(logger, "Neo", 30);
+            });
+
+            // Configure CoinGecko HTTP client with Polly
+            services.AddHttpClient("CoinGecko", client =>
+            {
+                client.BaseAddress = new Uri("https://api.coingecko.com");
+                client.DefaultRequestHeaders.Add("Accept", "application/json");
+                client.Timeout = TimeSpan.FromSeconds(30);
+            })
+            .AddPolicyHandler((serviceProvider, request) =>
+            {
+                var logger = serviceProvider.GetRequiredService<ILogger<Program>>();
+                return ResiliencePolicies.GetCombinedPolicy(logger, "CoinGecko");
+            });
+
+            // Configure Kraken HTTP client with Polly
+            services.AddHttpClient("Kraken", client =>
+            {
+                client.BaseAddress = new Uri("https://api.kraken.com");
+                client.DefaultRequestHeaders.Add("Accept", "application/json");
+                client.Timeout = TimeSpan.FromSeconds(30);
+            })
+            .AddPolicyHandler((serviceProvider, request) =>
+            {
+                var logger = serviceProvider.GetRequiredService<ILogger<Program>>();
+                return ResiliencePolicies.GetCombinedPolicy(logger, "Kraken");
             });
 
             // Register data source adapters
