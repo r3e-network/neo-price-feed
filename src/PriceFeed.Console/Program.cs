@@ -253,6 +253,8 @@ try
             services.AddTransient<IDataSourceAdapter, CoinMarketCapDataSourceAdapter>();
             services.AddTransient<IDataSourceAdapter, CoinbaseDataSourceAdapter>();
             services.AddTransient<IDataSourceAdapter, OKExDataSourceAdapter>();
+            services.AddTransient<IDataSourceAdapter, CoinGeckoDataSourceAdapter>();
+            services.AddTransient<IDataSourceAdapter, KrakenDataSourceAdapter>();
 
             // Register symbol mapping service
             services.AddSingleton<SymbolMappingOptions>(sp =>
@@ -272,6 +274,8 @@ try
             rateLimiter.Configure("CoinMarketCap", 5); // 5 requests per second
             rateLimiter.Configure("Coinbase", 5); // 5 requests per second
             rateLimiter.Configure("OKEx", 5); // 5 requests per second
+            rateLimiter.Configure("CoinGecko", 10); // 10 requests per second (free tier)
+            rateLimiter.Configure("Kraken", 1); // 1 request per second (public API)
 
             // Add health checks
             services.AddHealthChecks()

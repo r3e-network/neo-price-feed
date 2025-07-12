@@ -1,0 +1,13 @@
+{
+  "network": "testnet",
+  "deployer": "NTmHjwiadq4g3VHpJ5FQigQcD4fF5m8TyX",
+  "contract_name": "PriceFeed.Oracle",
+  "nef_size": 2946,
+  "manifest_size": 4457,
+  "estimated_gas": "10-15 GAS",
+  "initialization": {
+    "step1": "initialize [\"NTmHjwiadq4g3VHpJ5FQigQcD4fF5m8TyX\",\"NiNmXL8FjEUEs1nfX9uHFBNaenxDHJtmuB\"]",
+    "step2": "addOracle [\"NiNmXL8FjEUEs1nfX9uHFBNaenxDHJtmuB\"]",
+    "step3": "setMinOracles [1]"
+  }
+}

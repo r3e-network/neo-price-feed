@@ -1,0 +1,16 @@
+#!/usr/bin/expect -f
+set timeout 30
+spawn ./neo-cli
+expect "neo>"
+send "open wallet deploy-wallet.json\r"
+expect "password:"
+send "deploy123\r"
+expect "neo>"
+send "list asset\r"
+expect "neo>"
+send "deploy deploy/PriceFeed.Oracle.nef deploy/PriceFeed.Oracle.manifest.json\r"
+expect "Deploy"
+send "yes\r"
+expect "neo>"
+send "exit\r"
+expect eof

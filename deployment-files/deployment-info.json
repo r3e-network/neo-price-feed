@@ -1,0 +1,9 @@
+{
+  "network": "testnet",
+  "account": {
+    "address": "NTmHjwiadq4g3VHpJ5FQigQcD4fF5m8TyX",
+    "wif": "KzjaqMvqzF1uup6KrTKRxTgjcXE7PbKLRH84e6ckyXDt3fu7afUb"
+  },
+  "rpc": "http://seed1t5.neo.org:20332",
+  "timestamp": "2025-06-28T11:38:48.7552297Z"
+}

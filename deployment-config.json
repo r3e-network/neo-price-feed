@@ -1,0 +1,28 @@
+{
+  "network": "Neo N3 TestNet",
+  "rpc_endpoint": "http://seed1t5.neo.org:20332",
+  "master_account": {
+    "address": "NTmHjwiadq4g3VHpJ5FQigQcD4fF5m8TyX",
+    "wif": "KzjaqMvqzF1uup6KrTKRxTgjcXE7PbKLRH84e6ckyXDt3fu7afUb"
+  },
+  "tee_account": {
+    "address": "NiNmXL8FjEUEs1nfX9uHFBNaenxDHJtmuB"
+  },
+  "contract_files": {
+    "nef": "src/PriceFeed.Contracts/PriceFeed.Oracle.nef",
+    "manifest": "src/PriceFeed.Contracts/PriceFeed.Oracle.manifest.json"
+  },
+  "initialization_commands": [
+    "initialize [NTmHjwiadq4g3VHpJ5FQigQcD4fF5m8TyX, NiNmXL8FjEUEs1nfX9uHFBNaenxDHJtmuB]",
+    "addOracle [NiNmXL8FjEUEs1nfX9uHFBNaenxDHJtmuB]",
+    "setMinOracles [1]"
+  ],
+  "deployment_time": "2025-06-28 09:33:43 UTC",
+  "deployed_contract": {
+    "hash": "0xc14ffc3f28363fe59645873b28ed3ed8ccb774cc",
+    "transaction": "0x15ccc11dbe781c6878d04a713fb04bc7a9c1f162fee97d2f03014eca918c4a53",
+    "gas_consumed": "10.00035859",
+    "network_fee": "0.00184924",
+    "total_fee": "10.00220783"
+  }
+}
