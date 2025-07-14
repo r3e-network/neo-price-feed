@@ -85,13 +85,13 @@ neoxp contract deploy bin\sc\PriceFeed.Oracle.nef account1 --force
 3. Initialize the contract:
 
 ```bash
-neoxp contract invoke <contract-hash> Initialize [<owner-address>] account1
+neoxp contract run <contract-hash> Initialize <owner-address> --acount account1
 ```
 
 4. Add oracles:
 
 ```bash
-neoxp contract invoke <contract-hash> AddOracle [<oracle-address>] account1
+neoxp contract invoke <contract-hash> AddOracle <oracle-address> account1
 ```
 
 ## Usage Examples

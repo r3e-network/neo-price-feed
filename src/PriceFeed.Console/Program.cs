@@ -106,6 +106,12 @@ try
         return await MockPriceFeedTest.RunTest();
     }
 
+    // Test contract interaction mode
+    if (commandLineArgs.Contains("--test-contract-interaction"))
+    {
+        return await ContractInteractionTest.RunFromCommandLine(commandLineArgs);
+    }
+
     // Check if we should skip health checks
     bool skipHealthChecks = commandLineArgs.Contains("--skip-health-checks");
 
