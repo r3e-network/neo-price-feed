@@ -11,6 +11,7 @@ using Neo.SmartContract.Manifest;
 using Neo.SmartContract.Native;
 using Neo.VM;
 using Neo.Wallets;
+using Neo.Wallets.NEP6;
 
 namespace PriceFeed.ContractDeployer
 {
@@ -30,8 +31,11 @@ namespace PriceFeed.ContractDeployer
                 const string manifestPath = "../../PriceFeed.Contracts/PriceFeed.Oracle.manifest.json";
 
                 // Create account from WIF
-                var account = new Neo.Wallets.NEP6.NEP6Account(masterWif);
-                Console.WriteLine($"📍 Deploying with Master Account: {account.Address}");
+                var privateKey = Neo.Wallets.Wallet.GetPrivateKeyFromWIF(masterWif);
+                var keyPair = new Neo.Wallets.KeyPair(privateKey);
+                var contract = Neo.SmartContract.Contract.CreateSignatureContract(keyPair.PublicKey);
+                var address = contract.ScriptHash.ToAddress(Neo.ProtocolSettings.Default.AddressVersion);
+                Console.WriteLine($"📍 Deploying with Master Account: {address}");
 
                 // Check contract files
                 if (!File.Exists(contractPath))
@@ -50,7 +54,7 @@ namespace PriceFeed.ContractDeployer
                 var manifest = ContractManifest.Parse(manifestContent);
 
                 Console.WriteLine("📄 Contract files loaded successfully");
-                Console.WriteLine($"   NEF Magic: {nef.Magic}");
+                Console.WriteLine($"   NEF Checksum: {nef.CheckSum}");
                 Console.WriteLine($"   Compiler: {nef.Compiler}");
                 Console.WriteLine($"   Contract Name: {manifest.Name}");
 
@@ -59,8 +63,20 @@ namespace PriceFeed.ContractDeployer
                 Console.WriteLine($"🌐 Connected to TestNet: {rpcEndpoint}");
 
                 // Get account balance
-                var neoBalance = await rpcClient.GetNep17BalanceAsync(NativeContract.NEO.Hash, account.Address);
-                var gasBalance = await rpcClient.GetNep17BalanceAsync(NativeContract.GAS.Hash, account.Address);
+                var nep17Balances = await rpcClient.GetNep17BalancesAsync(address);
+                var neoBalance = BigInteger.Zero;
+                var gasBalance = BigInteger.Zero;
+                
+                if (nep17Balances?.Balances != null)
+                {
+                    foreach (var balance in nep17Balances.Balances)
+                    {
+                        if (balance.AssetHash == NativeContract.NEO.Hash.ToString())
+                            neoBalance = BigInteger.Parse(balance.Amount);
+                        else if (balance.AssetHash == NativeContract.GAS.Hash.ToString())
+                            gasBalance = BigInteger.Parse(balance.Amount);
+                    }
+                }
                 
                 Console.WriteLine($"💰 Account Balances:");
                 Console.WriteLine($"   NEO: {neoBalance / BigInteger.Pow(10, 0)}");
@@ -75,22 +91,36 @@ namespace PriceFeed.ContractDeployer
                 Console.WriteLine("\n📤 Deploying contract to TestNet...");
 
                 // Get the contract hash (before deployment)
-                var contractHash = Helper.GetContractHash(account.ScriptHash, nef.Script, manifest.ToJson().ToString());
+                var contractHash = Neo.SmartContract.Helper.GetContractHash(contract.ScriptHash, nef.Script, manifest.ToJson().ToString());
                 Console.WriteLine($"🎯 Expected Contract Hash: 0x{contractHash}");
 
                 // Create deployment script
                 using var sb = new ScriptBuilder();
                 sb.EmitPush(manifest.ToJson().ToString());
-                sb.EmitPush(nef.ToArray());
+                // NefFile doesn't have ToArray() in newer versions, use Script property
+                sb.EmitPush(nef.Script);
                 sb.EmitPush(2); // CallFlags.All
-                sb.EmitSysCall(ApplicationEngine.System_Contract_Deploy);
+                sb.EmitSysCall(Neo.SmartContract.ApplicationEngine.System_Contract_Create);
 
                 var script = sb.ToArray();
 
                 // Create and sign transaction
-                var tx = await rpcClient.CreateTransactionAsync(script, account.ScriptHash);
-                var signature = tx.Sign(account);
-                tx.Witnesses = new[] { signature };
+                var signers = new[] { new Signer { Scopes = WitnessScope.CalledByEntry, Account = contract.ScriptHash } };
+                var tx = await rpcClient.CreateTransactionAsync(script, signers);
+                
+                // Create witness
+                var witness = new Witness
+                {
+                    InvocationScript = new byte[0],
+                    VerificationScript = contract.Script
+                };
+                
+                // Sign the transaction
+                var data = tx.GetHashData();
+                var signature = Neo.Cryptography.Crypto.Sign(data, privateKey);
+                witness.InvocationScript = new ScriptBuilder().EmitPush(signature).ToArray();
+                
+                tx.Witnesses = new[] { witness };
 
                 // Send transaction
                 var txHash = await rpcClient.SendRawTransactionAsync(tx);

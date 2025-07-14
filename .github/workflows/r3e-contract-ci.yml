@@ -1,0 +1,178 @@
+name: R3E Contract CI/CD
+
+on:
+  push:
+    branches: [ main, develop ]
+    paths:
+      - 'src/PriceFeed.R3E/**'
+      - '.github/workflows/r3e-contract-ci.yml'
+  pull_request:
+    branches: [ main, develop ]
+    paths:
+      - 'src/PriceFeed.R3E/**'
+      - '.github/workflows/r3e-contract-ci.yml'
+  workflow_dispatch:
+
+env:
+  DOTNET_VERSION: '8.0.x'
+  R3E_COMPILER_VERSION: '1.0.0-*'
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    name: Build and Test R3E Contract
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+
+    - name: Cache NuGet packages
+      uses: actions/cache@v3
+      with:
+        path: ~/.nuget/packages
+        key: ${{ runner.os }}-nuget-${{ hashFiles('**/packages.lock.json') }}
+        restore-keys: |
+          ${{ runner.os }}-nuget-
+
+    - name: Add R3E NuGet source
+      run: |
+        dotnet nuget add source https://api.nuget.org/v3/index.json -n nuget.org --skip-duplicate
+        # Add R3E package source when available
+        # dotnet nuget add source https://nuget.r3e.network/v3/index.json -n r3e --skip-duplicate
+
+    - name: Restore dependencies
+      run: dotnet restore src/PriceFeed.R3E/PriceFeed.R3E.sln
+
+    - name: Build solution
+      run: dotnet build src/PriceFeed.R3E/PriceFeed.R3E.sln --configuration Release --no-restore
+
+    - name: Run tests
+      run: dotnet test src/PriceFeed.R3E/PriceFeed.R3E.Tests/PriceFeed.R3E.Tests.csproj --configuration Release --no-build --verbosity normal --collect:"XPlat Code Coverage"
+
+    - name: Upload coverage reports
+      uses: codecov/codecov-action@v3
+      with:
+        file: ./src/PriceFeed.R3E/PriceFeed.R3E.Tests/TestResults/**/coverage.cobertura.xml
+        flags: r3e-contract
+        name: r3e-contract-coverage
+
+    - name: Verify contract compilation
+      run: |
+        if [ -f "src/PriceFeed.R3E/PriceFeed.R3E.Contract/bin/sc/PriceFeed.Oracle.nef" ]; then
+          echo "✅ NEF file generated successfully"
+        else
+          echo "❌ NEF file not found"
+          exit 1
+        fi
+        
+        if [ -f "src/PriceFeed.R3E/PriceFeed.R3E.Contract/bin/sc/PriceFeed.Oracle.manifest.json" ]; then
+          echo "✅ Manifest file generated successfully"
+        else
+          echo "❌ Manifest file not found"
+          exit 1
+        fi
+
+    - name: Upload contract artifacts
+      uses: actions/upload-artifact@v3
+      if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+      with:
+        name: r3e-contract-artifacts
+        path: |
+          src/PriceFeed.R3E/PriceFeed.R3E.Contract/bin/sc/PriceFeed.Oracle.nef
+          src/PriceFeed.R3E/PriceFeed.R3E.Contract/bin/sc/PriceFeed.Oracle.manifest.json
+
+  security-scan:
+    runs-on: ubuntu-latest
+    name: Security Scan
+    needs: build-and-test
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Run security scan
+      uses: github/super-linter@v5
+      env:
+        DEFAULT_BRANCH: main
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        VALIDATE_CSHARP: true
+        FILTER_REGEX_INCLUDE: .*src/PriceFeed\.R3E/.*\.cs$
+
+  deploy-testnet:
+    runs-on: ubuntu-latest
+    name: Deploy to TestNet
+    needs: [build-and-test, security-scan]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    environment: testnet
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+
+    - name: Download contract artifacts
+      uses: actions/download-artifact@v3
+      with:
+        name: r3e-contract-artifacts
+        path: src/PriceFeed.R3E/PriceFeed.R3E.Contract/bin/sc/
+
+    - name: Build deployment tool
+      run: dotnet build src/PriceFeed.R3E/PriceFeed.R3E.Deploy/PriceFeed.R3E.Deploy.csproj --configuration Release
+
+    - name: Deploy contract
+      run: |
+        cd src/PriceFeed.R3E/PriceFeed.R3E.Deploy
+        dotnet run -- deploy
+      env:
+        Deployment__Network: TestNet
+        Deployment__RpcEndpoint: ${{ secrets.TESTNET_RPC_ENDPOINT }}
+        Deployment__DeployerWif: ${{ secrets.TESTNET_DEPLOYER_WIF }}
+
+    - name: Initialize contract
+      run: |
+        cd src/PriceFeed.R3E/PriceFeed.R3E.Deploy
+        dotnet run -- initialize
+      env:
+        Deployment__ContractHash: ${{ steps.deploy.outputs.contract_hash }}
+        Initialization__OwnerAddress: ${{ secrets.CONTRACT_OWNER_ADDRESS }}
+        Initialization__TeeAccountAddress: ${{ secrets.TEE_ACCOUNT_ADDRESS }}
+
+    - name: Verify deployment
+      run: |
+        cd src/PriceFeed.R3E/PriceFeed.R3E.Deploy
+        dotnet run -- verify
+      env:
+        Deployment__ContractHash: ${{ steps.deploy.outputs.contract_hash }}
+
+    - name: Update deployment status
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const contractHash = '${{ steps.deploy.outputs.contract_hash }}';
+          const txHash = '${{ steps.deploy.outputs.tx_hash }}';
+          
+          // Create deployment comment
+          const comment = `## 🚀 R3E Contract Deployed to TestNet
+          
+          - **Contract Hash**: \`${contractHash}\`
+          - **Transaction**: \`${txHash}\`
+          - **Network**: TestNet
+          - **Time**: ${new Date().toISOString()}
+          
+          [View on Explorer](https://testnet.explorer.onegate.space/contract/${contractHash})`;
+          
+          github.rest.issues.createComment({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            body: comment
+          });

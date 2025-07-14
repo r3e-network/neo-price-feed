@@ -305,7 +305,35 @@ try
 
             // Register services
             services.AddTransient<IPriceAggregationService, PriceAggregationService>();
-            services.AddTransient<IBatchProcessingService, BatchProcessingService>();
+            
+            // Register batch processing service based on configuration
+            services.AddTransient<IBatchProcessingService>(provider =>
+            {
+                var batchOptions = provider.GetRequiredService<IOptions<BatchProcessingOptions>>();
+                var logger = provider.GetRequiredService<ILoggerFactory>();
+                var attestationService = provider.GetRequiredService<IAttestationService>();
+                
+                // Check if R3E contract should be used
+                var useR3E = hostContext.Configuration.GetValue<bool>("BatchProcessing:UseR3EContract", false);
+                
+                if (useR3E)
+                {
+                    logger.CreateLogger<Program>().LogInformation("Using R3E-optimized contract");
+                    return new R3EBatchProcessingService(
+                        logger.CreateLogger<R3EBatchProcessingService>(),
+                        batchOptions,
+                        attestationService);
+                }
+                else
+                {
+                    logger.CreateLogger<Program>().LogInformation("Using standard Neo contract");
+                    return new BatchProcessingService(
+                        logger.CreateLogger<BatchProcessingService>(),
+                        batchOptions,
+                        attestationService);
+                }
+            });
+            
             services.AddSingleton<RateLimiter>();
             services.AddSingleton<AttestationService>();
             services.AddSingleton<IAttestationService>(provider => provider.GetRequiredService<AttestationService>());
