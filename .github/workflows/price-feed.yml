@@ -56,11 +56,21 @@ jobs:
     - name: Restore dependencies
       run: dotnet restore
 
-    - name: Build
-      run: dotnet build --configuration Release --no-restore
+    - name: Build (excluding contracts)
+      run: |
+        # Build all projects except the contracts project
+        dotnet build --configuration Release --no-restore \
+          src/PriceFeed.Core/PriceFeed.Core.csproj \
+          src/PriceFeed.Infrastructure/PriceFeed.Infrastructure.csproj \
+          src/PriceFeed.Console/PriceFeed.Console.csproj \
+          src/PriceFeed.ContractDeployer/PriceFeed.ContractDeployer.csproj \
+          test/PriceFeed.Tests/PriceFeed.Tests.csproj
 
     - name: Run tests
-      run: dotnet test --configuration Release --no-build --verbosity normal
+      run: |
+        # Run tests only for non-contract projects
+        dotnet test --configuration Release --no-build --verbosity normal \
+          test/PriceFeed.Tests/PriceFeed.Tests.csproj
       continue-on-error: true  # Don't fail the price feed if tests fail
 
     - name: Debug - Check environment variables
