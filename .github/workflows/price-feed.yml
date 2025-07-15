@@ -54,16 +54,26 @@ jobs:
           ${{ runner.os }}-nuget-
 
     - name: Restore dependencies
-      run: dotnet restore
+      run: |
+        # Restore only the projects we need
+        dotnet restore src/PriceFeed.Core/PriceFeed.Core.csproj
+        dotnet restore src/PriceFeed.Infrastructure/PriceFeed.Infrastructure.csproj
+        dotnet restore src/PriceFeed.Console/PriceFeed.Console.csproj
+        dotnet restore src/PriceFeed.ContractDeployer/PriceFeed.ContractDeployer.csproj
+        dotnet restore test/PriceFeed.Tests/PriceFeed.Tests.csproj
 
     - name: Build (excluding contracts)
       run: |
         # Build all projects except the contracts project
         dotnet build --configuration Release --no-restore \
-          src/PriceFeed.Core/PriceFeed.Core.csproj \
-          src/PriceFeed.Infrastructure/PriceFeed.Infrastructure.csproj \
-          src/PriceFeed.Console/PriceFeed.Console.csproj \
-          src/PriceFeed.ContractDeployer/PriceFeed.ContractDeployer.csproj \
+          src/PriceFeed.Core/PriceFeed.Core.csproj
+        dotnet build --configuration Release --no-restore \
+          src/PriceFeed.Infrastructure/PriceFeed.Infrastructure.csproj
+        dotnet build --configuration Release --no-restore \
+          src/PriceFeed.Console/PriceFeed.Console.csproj
+        dotnet build --configuration Release --no-restore \
+          src/PriceFeed.ContractDeployer/PriceFeed.ContractDeployer.csproj
+        dotnet build --configuration Release --no-restore \
           test/PriceFeed.Tests/PriceFeed.Tests.csproj
 
     - name: Run tests
