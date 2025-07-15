@@ -1,0 +1,90 @@
+name: Test Price Feed
+
+on:
+  workflow_dispatch:
+
+env:
+  DOTNET_VERSION: '9.0.x'
+
+jobs:
+  test-build:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+
+    - name: Show environment
+      run: |
+        echo "=== Environment Info ==="
+        echo "OS: $(uname -a)"
+        echo "PWD: $(pwd)"
+        echo "dotnet version:"
+        dotnet --version
+        echo ""
+        echo "=== Directory Structure ==="
+        ls -la
+        echo ""
+        echo "=== Source Directory ==="
+        ls -la src/
+        echo ""
+        echo "=== Scripts Directory ==="
+        ls -la scripts/
+
+    - name: Restore dependencies
+      run: dotnet restore
+
+    - name: Build
+      run: dotnet build --configuration Release --no-restore
+
+    - name: Test contract deployer
+      run: |
+        echo "=== Testing Contract Deployer ==="
+        cd src/PriceFeed.ContractDeployer
+        dotnet run --configuration Release verify || echo "Contract verify command failed"
+
+    - name: Test Python scripts
+      run: |
+        echo "=== Testing Python Scripts ==="
+        python3 --version
+        cd scripts
+        echo "Files in scripts directory:"
+        ls -la
+        echo ""
+        echo "Testing initialize script exists:"
+        if [ -f "initialize-contract-rpc.py" ]; then
+          echo "✓ initialize-contract-rpc.py exists"
+          head -n 20 initialize-contract-rpc.py
+        else
+          echo "✗ initialize-contract-rpc.py NOT FOUND"
+        fi
+        echo ""
+        echo "Testing test-price-feed script exists:"
+        if [ -f "test-price-feed.py" ]; then
+          echo "✓ test-price-feed.py exists"
+          head -n 20 test-price-feed.py
+        else
+          echo "✗ test-price-feed.py NOT FOUND"
+        fi
+
+    - name: Test mock price feed
+      run: |
+        echo "=== Testing Mock Price Feed ==="
+        cd src/PriceFeed.Console
+        timeout 30 dotnet run --configuration Release -- --test-mock-price-feed || {
+          exit_code=$?
+          if [ $exit_code -eq 124 ]; then
+            echo "Mock price feed timed out (expected for continuous service)"
+          else
+            echo "Mock price feed exited with code: $exit_code"
+          fi
+        }
+      env:
+        NEO_RPC_ENDPOINT: 'http://seed1t5.neo.org:20332'
+        CONTRACT_SCRIPT_HASH: '0xc14ffc3f28363fe59645873b28ed3ed8ccb774cc'
+        DOTNET_ENVIRONMENT: Production

@@ -1,5 +1,0 @@
-create wallet deploy-wallet.json
-open wallet deploy-wallet.json
-import key KzjaqMvqzF1uup6KrTKRxTgjcXE7PbKLRH84e6ckyXDt3fu7afUb
-list asset
-deploy deploy/PriceFeed.Oracle.nef deploy/PriceFeed.Oracle.manifest.json

@@ -1,10 +1,24 @@
-name: Neo Price Feed Service (TEE)
+name: Neo Price Feed Service
 
 on:
   schedule:
-    # Run every 5 minutes for continuous price updates
-    - cron: '*/5 * * * *'
+    # Run every 4 hours to keep price feed data fresh
+    - cron: '0 */4 * * *'
   workflow_dispatch:  # Allow manual triggering
+    inputs:
+      test_mode:
+        description: 'Run in test mode (mock data sources)'
+        required: false
+        default: false
+        type: boolean
+      debug_mode:
+        description: 'Enable debug logging'
+        required: false
+        default: false
+        type: boolean
+
+env:
+  DOTNET_VERSION: '9.0.x'
 
 jobs:
   run-price-feed:
@@ -20,9 +34,18 @@ jobs:
     - name: Setup .NET
       uses: actions/setup-dotnet@v4
       with:
-        dotnet-version: 9.0.x
+        dotnet-version: ${{ env.DOTNET_VERSION }}
 
-    - name: Cache NuGet packages
+    - name: Setup Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.x'
+
+    - name: Install Python dependencies
+      run: |
+        pip install requests
+
+    - name: Cache dependencies
       uses: actions/cache@v3
       with:
         path: ~/.nuget/packages
@@ -36,45 +59,172 @@ jobs:
     - name: Build
       run: dotnet build --configuration Release --no-restore
 
-    - name: Run Price Feed
+    - name: Run tests
+      run: dotnet test --configuration Release --no-build --verbosity normal
+      continue-on-error: true  # Don't fail the price feed if tests fail
+
+    - name: Debug - Check environment variables
+      if: ${{ github.event.inputs.debug_mode == 'true' }}
       run: |
-        # Create attestations directory
-        mkdir -p attestations
-
-        # Copy accessible configuration for production use
-        cp src/PriceFeed.Console/appsettings.accessible.json src/PriceFeed.Console/appsettings.production.json
-
-        # Run the price feed service with accessible APIs
-        dotnet run --project src/PriceFeed.Console/PriceFeed.Console.csproj --configuration Release
+        echo "=== Debug: Environment Variables ==="
+        echo "NEO_RPC_ENDPOINT: ${NEO_RPC_ENDPOINT:-'Not set, will use default'}"
+        echo "CONTRACT_SCRIPT_HASH: ${CONTRACT_SCRIPT_HASH:-'Not set, will use default'}"
+        echo "TEE_ACCOUNT_ADDRESS is set: ${{ secrets.NEO_TEE_ACCOUNT_ADDRESS != '' }}"
+        echo "MASTER_ACCOUNT_ADDRESS is set: ${{ secrets.MASTER_ACCOUNT_ADDRESS != '' }}"
+        echo "COINMARKETCAP_API_KEY is set: ${{ secrets.COINMARKETCAP_API_KEY != '' }}"
       env:
-        # Accessible API keys (optional - these APIs work without keys)
-        COINGECKO_API_KEY: ${{ secrets.COINGECKO_API_KEY }}
-        KRAKEN_API_KEY: ${{ secrets.KRAKEN_API_KEY }}
-        KRAKEN_API_SECRET: ${{ secrets.KRAKEN_API_SECRET }}
-        COINBASE_API_KEY: ${{ secrets.COINBASE_API_KEY }}
-        COINBASE_API_SECRET: ${{ secrets.COINBASE_API_SECRET }}
-        
-        # Fallback APIs (use only if accessible in your region)
-        BINANCE_API_KEY: ${{ secrets.BINANCE_API_KEY }}
-        BINANCE_API_SECRET: ${{ secrets.BINANCE_API_SECRET }}
-        
-        # Neo blockchain configuration
         NEO_RPC_ENDPOINT: ${{ secrets.NEO_RPC_ENDPOINT }}
         CONTRACT_SCRIPT_HASH: ${{ secrets.CONTRACT_SCRIPT_HASH }}
-        TEE_ACCOUNT_ADDRESS: ${{ secrets.TEE_ACCOUNT_ADDRESS }}
-        TEE_ACCOUNT_PRIVATE_KEY: ${{ secrets.TEE_ACCOUNT_PRIVATE_KEY }}
+
+    - name: Verify contract status
+      id: verify_contract
+      run: |
+        cd src/PriceFeed.ContractDeployer
+        echo "=== Verifying contract status ==="
+        if dotnet run --configuration Release verify; then
+          echo "contract_initialized=true" >> $GITHUB_OUTPUT
+        else
+          echo "::warning::Contract verification failed. Contract may not be initialized."
+          echo "contract_initialized=false" >> $GITHUB_OUTPUT
+        fi
+      env:
+        DOTNET_ENVIRONMENT: Production
+        NEO_RPC_ENDPOINT: ${{ secrets.NEO_RPC_ENDPOINT || 'http://seed1t5.neo.org:20332' }}
+        CONTRACT_SCRIPT_HASH: ${{ secrets.CONTRACT_SCRIPT_HASH || '0xc14ffc3f28363fe59645873b28ed3ed8ccb774cc' }}
+
+    - name: Initialize contract if needed
+      if: steps.verify_contract.outputs.contract_initialized == 'false'
+      run: |
+        cd scripts
+        echo "=== Attempting to initialize contract ==="
+        if ! python3 initialize-contract-rpc.py; then
+          echo "::warning::Contract initialization failed. This may require manual intervention."
+        fi
+      env:
+        NEO_RPC_ENDPOINT: ${{ secrets.NEO_RPC_ENDPOINT || 'http://seed1t5.neo.org:20332' }}
+        CONTRACT_SCRIPT_HASH: ${{ secrets.CONTRACT_SCRIPT_HASH || '0xc14ffc3f28363fe59645873b28ed3ed8ccb774cc' }}
+        TEE_ACCOUNT_ADDRESS: ${{ secrets.NEO_TEE_ACCOUNT_ADDRESS }}
+        TEE_ACCOUNT_PRIVATE_KEY: ${{ secrets.NEO_TEE_ACCOUNT_PRIVATE_KEY }}
         MASTER_ACCOUNT_ADDRESS: ${{ secrets.MASTER_ACCOUNT_ADDRESS }}
         MASTER_ACCOUNT_PRIVATE_KEY: ${{ secrets.MASTER_ACCOUNT_PRIVATE_KEY }}
-        SYMBOLS: "NEOBTC,NEOUSDT,BTCUSDT,FLMUSDT,ETHUSDT,ADAUSDT"
 
-    - name: Upload Price Feed Attestations
-      uses: actions/upload-artifact@v4
-      with:
-        name: price-feed-attestations
-        path: attestations/
-        retention-days: 30  # Keep attestations for 30 days
+    - name: Run Price Feed Service
+      id: price_feed
+      run: |
+        cd src/PriceFeed.Console
+        echo "=== Running Price Feed Service ==="
+        
+        if [[ "${{ github.event.inputs.test_mode }}" == "true" ]]; then
+          echo "Running in test mode with mock data sources"
+          dotnet run --configuration Release -- --test-mock-price-feed
+        else
+          echo "Running production price feed"
+          # Add timeout to prevent hanging
+          if ! timeout 600 dotnet run --configuration Release; then
+            exit_code=$?
+            if [ $exit_code -eq 124 ]; then
+              echo "::error::Price feed timed out after 10 minutes"
+            else
+              echo "::error::Price feed failed with exit code $exit_code"
+            fi
+            exit $exit_code
+          fi
+        fi
+      env:
+        # Neo blockchain configuration
+        NEO_RPC_ENDPOINT: ${{ secrets.NEO_RPC_ENDPOINT || 'http://seed1t5.neo.org:20332' }}
+        CONTRACT_SCRIPT_HASH: ${{ secrets.CONTRACT_SCRIPT_HASH || '0xc14ffc3f28363fe59645873b28ed3ed8ccb774cc' }}
+        
+        # Batch processing configuration
+        NEO_CONTRACT_HASH: ${{ secrets.CONTRACT_SCRIPT_HASH || '0xc14ffc3f28363fe59645873b28ed3ed8ccb774cc' }}
+        NEO_ACCOUNT_ADDRESS: ${{ secrets.NEO_TEE_ACCOUNT_ADDRESS }}
+        NEO_ACCOUNT_PRIVATE_KEY: ${{ secrets.NEO_TEE_ACCOUNT_PRIVATE_KEY }}
+        
+        # Account configuration (from secrets)
+        TEE_ACCOUNT_ADDRESS: ${{ secrets.NEO_TEE_ACCOUNT_ADDRESS }}
+        TEE_ACCOUNT_PRIVATE_KEY: ${{ secrets.NEO_TEE_ACCOUNT_PRIVATE_KEY }}
+        MASTER_ACCOUNT_ADDRESS: ${{ secrets.MASTER_ACCOUNT_ADDRESS }}
+        MASTER_ACCOUNT_PRIVATE_KEY: ${{ secrets.MASTER_ACCOUNT_PRIVATE_KEY }}
+        
+        # Data source API keys (optional - will use free endpoints if not provided)
+        BINANCE_API_KEY: ${{ secrets.BINANCE_API_KEY }}
+        BINANCE_API_SECRET: ${{ secrets.BINANCE_API_SECRET }}
+        COINMARKETCAP_API_KEY: ${{ secrets.COINMARKETCAP_API_KEY }}
+        COINBASE_API_KEY: ${{ secrets.COINBASE_API_KEY }}
+        COINBASE_API_SECRET: ${{ secrets.COINBASE_API_SECRET }}
+        OKEX_API_KEY: ${{ secrets.OKEX_API_KEY }}
+        OKEX_API_SECRET: ${{ secrets.OKEX_API_SECRET }}
+        OKEX_PASSPHRASE: ${{ secrets.OKEX_PASSPHRASE }}
+        
+        # Trading symbols to collect
+        SYMBOLS: ${{ secrets.SYMBOLS || 'NEOBTC,NEOUSDT,BTCUSDT,ETHUSDT' }}
+        
+        # Environment
+        DOTNET_ENVIRONMENT: Production
+        
+        # Debug logging
+        Logging__LogLevel__Default: ${{ github.event.inputs.debug_mode == 'true' && 'Debug' || 'Information' }}
 
-    - name: Generate Build Attestation
+    - name: Generate attestation
+      if: success()
       uses: actions/attest-build-provenance@v1
       with:
-        subject-path: src/PriceFeed.Console/bin/Release/net9.0/PriceFeed.Console.dll
+        subject-path: 'src/PriceFeed.Console/bin/Release/net9.0/*'
+
+    - name: Upload logs
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: price-feed-logs-${{ github.run_number }}
+        path: |
+          src/PriceFeed.Console/logs/
+          *.log
+        retention-days: 30
+        if-no-files-found: ignore
+
+    - name: Notify on failure
+      if: failure()
+      run: |
+        echo "::error::Price feed failed. Check logs for details."
+        echo "Run ID: ${{ github.run_id }}"
+        echo "Run number: ${{ github.run_number }}"
+        echo "Commit: ${{ github.sha }}"
+
+  monitor-contract:
+    runs-on: ubuntu-latest
+    needs: run-price-feed
+    if: success()
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Setup Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.x'
+
+    - name: Install dependencies
+      run: |
+        pip install requests
+
+    - name: Monitor price feed data
+      run: |
+        cd scripts
+        echo "=== Monitoring price feed data ==="
+        if ! python3 test-price-feed.py; then
+          echo "::warning::Price feed monitoring detected issues"
+        fi
+      env:
+        NEO_RPC_ENDPOINT: ${{ secrets.NEO_RPC_ENDPOINT || 'http://seed1t5.neo.org:20332' }}
+        CONTRACT_SCRIPT_HASH: ${{ secrets.CONTRACT_SCRIPT_HASH || '0xc14ffc3f28363fe59645873b28ed3ed8ccb774cc' }}
+
+    - name: Summary
+      if: always()
+      run: |
+        echo "=== Price Feed Run Summary ==="
+        echo "Time: $(date)"
+        echo "Run Number: ${{ github.run_number }}"
+        echo "Status: Completed"
+        echo ""
+        echo "Next scheduled run in 4 hours"

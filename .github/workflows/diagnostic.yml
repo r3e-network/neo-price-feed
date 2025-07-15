@@ -1,0 +1,44 @@
+name: Diagnostic Check
+
+on:
+  workflow_dispatch:
+    inputs:
+      verbose:
+        description: 'Enable verbose output'
+        required: false
+        default: true
+        type: boolean
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Check secrets
+      run: |
+        echo "=== Checking GitHub Secrets ==="
+        echo "NEO_TEE_ACCOUNT_ADDRESS exists: ${{ secrets.NEO_TEE_ACCOUNT_ADDRESS != '' }}"
+        echo "NEO_TEE_ACCOUNT_PRIVATE_KEY exists: ${{ secrets.NEO_TEE_ACCOUNT_PRIVATE_KEY != '' }}"
+        echo "MASTER_ACCOUNT_ADDRESS exists: ${{ secrets.MASTER_ACCOUNT_ADDRESS != '' }}"
+        echo "MASTER_ACCOUNT_PRIVATE_KEY exists: ${{ secrets.MASTER_ACCOUNT_PRIVATE_KEY != '' }}"
+        echo "COINMARKETCAP_API_KEY exists: ${{ secrets.COINMARKETCAP_API_KEY != '' }}"
+        echo ""
+        echo "=== Checking Files ==="
+        echo "Scripts directory:"
+        ls -la scripts/ | grep -E "(initialize-contract-rpc|test-price-feed).py" || echo "Key scripts not found!"
+        echo ""
+        echo "Source directories:"
+        ls -la src/
+        echo ""
+        echo "=== Testing Network Access ==="
+        echo "Testing Neo RPC endpoint..."
+        curl -s -X POST http://seed1t5.neo.org:20332 \
+          -H "Content-Type: application/json" \
+          -d '{"jsonrpc":"2.0","method":"getblockcount","params":[],"id":1}' | jq . || echo "RPC test failed"
+        echo ""
+        echo "=== Python Environment ==="
+        python3 --version
+        pip3 --version || echo "pip3 not found"

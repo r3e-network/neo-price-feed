@@ -53,7 +53,7 @@ public class BatchProcessingService : IBatchProcessingService, IDisposable
             _options = new BatchProcessingOptions
             {
                 RpcEndpoint = "http://seed1t5.neo.org:20332",
-                ContractScriptHash = "0x245f20c5932eb9c5db16b66b9d074b40ee12be50",
+                ContractScriptHash = "0xc14ffc3f28363fe59645873b28ed3ed8ccb774cc",
                 TeeAccountAddress = "NiNmXL8FjEUEs1nfX9uHFBNaenxDHJtmuB",
                 TeeAccountPrivateKey = "L44B5gGEpqEDRS2vVuwX5jASYSAALwPM9Hu4w5gZzNXCt9eZ1qqs",
                 MasterAccountAddress = "NTmHjwiadq4g3VHpJ5FQigQcD4fF5m8TyX",
@@ -165,7 +165,7 @@ public class BatchProcessingService : IBatchProcessingService, IDisposable
                     @params = new object[]
                     {
                         _options.ContractScriptHash,
-                        "UpdatePriceBatch",
+                        "updatePriceBatch",
                         new object[]
                         {
                             new { type = "Array", value = symbols.Select(s => new { type = "String", value = s }).ToArray() },
