@@ -1,0 +1,134 @@
+# Build outputs
+bin/
+obj/
+out/
+
+# Visual Studio
+.vs/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# VS Code
+.vscode/
+
+# JetBrains Rider
+.idea/
+*.sln.iml
+
+# User-specific files
+*.rsuser
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# NuGet
+*.nupkg
+*.snupkg
+project.lock.json
+project.fragment.lock.json
+artifacts/
+
+# Test Results
+TestResults/
+coverage/
+*.coverage
+*.coveragexml
+
+# Logs
+*.log
+logs/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Local environment
+.env
+.env.local
+
+# Neo specific
+*.nef
+*.manifest.json
+*.abi.json
+deploy/
+deployment-files/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.Python
+env/
+venv/
+
+# Node
+node_modules/
+npm-debug.log*
+
+# Temporary files
+*.tmp
+*.temp
+*.bak
+*.swp
+*~
+
+# Local data
+Data_LevelDB_*/
+neo-cli
+neo-cli-*/
+*.wallet
+deploy-wallet.json
+config.*.json
+!appsettings.json
+!appsettings.*.json
+
+# Build artifacts
+libleveldb.so
+librocksdb*.so
+*.deps.json
+*.runtimeconfig.json
+Plugins/
+
+# Documentation build
+docs/_build/
+docs/_site/
+
+# Deployment
+deployment-config.json
+deployment-data.json
+*.neo-invoke.json
+
+# Session files
+SESSION_*.md
+DEPLOYMENT_*.md
+PROJECT_*.md
+FINAL_*.md
+PRODUCTION_*.md
+TESTNET_*.md
+*_STATUS.md
+*_STATUS.json
+*_SUMMARY.md
+*_GUIDE.md
+*_CHECKLIST.md
+QUICK_START.md
+README_*.md
+MISSION_*.md
+ACCESSIBILITY_*.md
+ALTERNATIVE_*.md
+CONTRACT_SETUP_GUIDE.md
+CSHARP_*.md
+DEPLOY_*.md
+INITIALIZATION_*.md
+REVIEW_*.md
+RPC_*.md
+SECURITY_*.md
+WORKFLOW_*.md
+WORKING_*.md
+add_*.neo-invoke.json
+get_*.neo-invoke.json
+initialize.neo-invoke.json
+update_*.neo-invoke.json
+test-config.*
