@@ -38,6 +38,9 @@ namespace PriceFeed.ContractDeployer
                     case "init":
                         await InitializeContract();
                         break;
+                    case "init-execute":
+                        await InitializeContractWithTransactions();
+                        break;
                     case "verify":
                         await VerifyContract();
                         break;
@@ -60,10 +63,11 @@ namespace PriceFeed.ContractDeployer
             Console.WriteLine("🚀 Neo N3 Smart Contract Deployer");
             Console.WriteLine("==================================");
             Console.WriteLine("Usage:");
-            Console.WriteLine("  dotnet run deploy    - Deploy the contract");
-            Console.WriteLine("  dotnet run init      - Initialize the deployed contract");
-            Console.WriteLine("  dotnet run verify    - Verify contract status");
-            Console.WriteLine("  dotnet run full      - Full deployment and setup (deploy + init)");
+            Console.WriteLine("  dotnet run deploy        - Deploy the contract");
+            Console.WriteLine("  dotnet run init          - Show initialization commands");
+            Console.WriteLine("  dotnet run init-execute  - Execute initialization transactions");
+            Console.WriteLine("  dotnet run verify        - Verify contract status");
+            Console.WriteLine("  dotnet run full          - Full deployment and setup");
         }
 
         static async Task<string> DeployContract()
@@ -401,6 +405,153 @@ namespace PriceFeed.ContractDeployer
             catch { }
             
             return 0;
+        }
+
+        static async Task InitializeContractWithTransactions()
+        {
+            try
+            {
+                Console.WriteLine("🚀 Executing Contract Initialization");
+                Console.WriteLine("====================================");
+
+                var contractHash = UInt160.Parse(KNOWN_CONTRACT_HASH);
+                var rpcClient = new RpcClient(new Uri(RPC_ENDPOINT));
+                
+                Console.WriteLine($"📍 Contract Hash: {KNOWN_CONTRACT_HASH}");
+                Console.WriteLine($"📍 Master Account: {MASTER_ADDRESS}");
+                Console.WriteLine($"📍 TEE Account: {TEE_ADDRESS}");
+                Console.WriteLine($"🌐 Connected to TestNet: {RPC_ENDPOINT}");
+
+                // Check if already initialized
+                var ownerResult = await InvokeContractMethod(rpcClient, contractHash, "getOwner");
+                if (ownerResult != null && ownerResult.State == VMState.HALT && ownerResult.Stack.Length > 0)
+                {
+                    var ownerStack = ownerResult.Stack[0];
+                    if (ownerStack.Type != Neo.VM.Types.StackItemType.Any)
+                    {
+                        Console.WriteLine("\n⚠️  Contract appears to be already initialized!");
+                        Console.WriteLine("   Use 'dotnet run verify' to check the current state.");
+                        return;
+                    }
+                }
+
+                Console.WriteLine("\n🔑 Starting initialization process...");
+                
+                // Step 1: Initialize contract
+                Console.WriteLine("\n1️⃣ Initializing contract with owner and TEE account...");
+                var initParams = new[]
+                {
+                    new ContractParameter { Type = ContractParameterType.String, Value = MASTER_ADDRESS },
+                    new ContractParameter { Type = ContractParameterType.String, Value = TEE_ADDRESS }
+                };
+                
+                try
+                {
+                    var initTxHash = await TransactionSender.SendInitializeTransaction(
+                        rpcClient, KNOWN_CONTRACT_HASH, MASTER_ADDRESS, TEE_ADDRESS, MASTER_WIF);
+                    
+                    Console.WriteLine($"   ✅ Transaction sent: {initTxHash}");
+                    Console.WriteLine("   ⏳ Waiting for confirmation...");
+                    await WaitForTransaction(rpcClient, initTxHash);
+                    Console.WriteLine("   ✅ Contract initialized!");
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"   ❌ Failed to initialize: {ex.Message}");
+                    return;
+                }
+
+                // Wait a bit for the blockchain to process
+                await Task.Delay(5000);
+
+                // Step 2: Add TEE as oracle
+                Console.WriteLine("\n2️⃣ Adding TEE account as oracle...");
+                var oracleParams = new[]
+                {
+                    new ContractParameter { Type = ContractParameterType.String, Value = TEE_ADDRESS }
+                };
+                
+                try
+                {
+                    var oracleTxHash = await TransactionSender.SendAddOracleTransaction(
+                        rpcClient, KNOWN_CONTRACT_HASH, TEE_ADDRESS, MASTER_WIF);
+                    
+                    Console.WriteLine($"   ✅ Transaction sent: {oracleTxHash}");
+                    Console.WriteLine("   ⏳ Waiting for confirmation...");
+                    await WaitForTransaction(rpcClient, oracleTxHash);
+                    Console.WriteLine("   ✅ TEE account added as oracle!");
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"   ❌ Failed to add oracle: {ex.Message}");
+                    return;
+                }
+
+                // Wait a bit
+                await Task.Delay(5000);
+
+                // Step 3: Set minimum oracles to 1
+                Console.WriteLine("\n3️⃣ Setting minimum oracles to 1...");
+                var minParams = new[]
+                {
+                    new ContractParameter { Type = ContractParameterType.Integer, Value = 1 }
+                };
+                
+                try
+                {
+                    var minTxHash = await TransactionSender.SendSetMinOraclesTransaction(
+                        rpcClient, KNOWN_CONTRACT_HASH, 1, MASTER_WIF);
+                    
+                    Console.WriteLine($"   ✅ Transaction sent: {minTxHash}");
+                    Console.WriteLine("   ⏳ Waiting for confirmation...");
+                    await WaitForTransaction(rpcClient, minTxHash);
+                    Console.WriteLine("   ✅ Minimum oracles set to 1!");
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"   ❌ Failed to set min oracles: {ex.Message}");
+                    return;
+                }
+
+                Console.WriteLine("\n✅ Contract initialization complete!");
+                Console.WriteLine("\n📊 Verifying final state...");
+                await Task.Delay(5000);
+                await VerifyContract();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"❌ Initialization failed: {ex.Message}");
+                Console.WriteLine(ex.StackTrace);
+            }
+        }
+
+        static async Task WaitForTransaction(RpcClient rpcClient, string txHash, int maxAttempts = 30)
+        {
+            Console.Write("   Waiting for confirmation");
+            for (int i = 0; i < maxAttempts; i++)
+            {
+                try
+                {
+                    // Check if transaction is in a block
+                    var appLog = await rpcClient.GetApplicationLogAsync(txHash);
+                    if (appLog != null)
+                    {
+                        Console.WriteLine(" ✅");
+                        if (appLog.Executions[0].VMState != VMState.HALT)
+                        {
+                            throw new Exception($"Transaction failed with state: {appLog.Executions[0].VMState}");
+                        }
+                        return;
+                    }
+                }
+                catch { }
+                
+                Console.Write(".");
+                await Task.Delay(2000); // Wait 2 seconds between attempts
+            }
+            
+            Console.WriteLine(" ⚠️");
+            Console.WriteLine("   Transaction not confirmed yet. It may still be processing.");
         }
     }
 }

@@ -1,45 +1,55 @@
-# Neo N3 Price Feed - Production Docker Image
-FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS base
-WORKDIR /app
-EXPOSE 8080
-
 # Build stage
-FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
+FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
 WORKDIR /src
 
-# Copy project files
-COPY ["src/PriceFeed.Console/PriceFeed.Console.csproj", "src/PriceFeed.Console/"]
-COPY ["src/PriceFeed.Core/PriceFeed.Core.csproj", "src/PriceFeed.Core/"]
-COPY ["src/PriceFeed.Infrastructure/PriceFeed.Infrastructure.csproj", "src/PriceFeed.Infrastructure/"]
-COPY ["src/PriceFeed.Contracts/PriceFeed.Contracts.csproj", "src/PriceFeed.Contracts/"]
+# Copy solution and project files
+COPY PriceFeed.CI.sln .
+COPY src/PriceFeed.Core/*.csproj ./src/PriceFeed.Core/
+COPY src/PriceFeed.Infrastructure/*.csproj ./src/PriceFeed.Infrastructure/
+COPY src/PriceFeed.Console/*.csproj ./src/PriceFeed.Console/
+COPY src/PriceFeed.ContractDeployer/*.csproj ./src/PriceFeed.ContractDeployer/
+COPY test/PriceFeed.Tests/*.csproj ./test/PriceFeed.Tests/
 
 # Restore dependencies
-RUN dotnet restore "src/PriceFeed.Console/PriceFeed.Console.csproj"
+RUN dotnet restore PriceFeed.CI.sln
 
 # Copy source code
-COPY . .
+COPY src/ ./src/
+COPY test/ ./test/
 
-# Build application
-WORKDIR "/src/src/PriceFeed.Console"
-RUN dotnet build "PriceFeed.Console.csproj" -c Release -o /app/build
+# Build the application
+RUN dotnet publish src/PriceFeed.Console/PriceFeed.Console.csproj \
+    -c Release \
+    -o /app/publish \
+    --no-restore
 
-# Publish stage
-FROM build AS publish
-RUN dotnet publish "PriceFeed.Console.csproj" -c Release -o /app/publish /p:UseAppHost=false
-
-# Final stage
-FROM base AS final
+# Runtime stage
+FROM mcr.microsoft.com/dotnet/runtime:9.0-alpine AS runtime
 WORKDIR /app
-COPY --from=publish /app/publish .
 
-# Create non-root user for security
-RUN groupadd -r pricefeeder && useradd -r -g pricefeeder pricefeeder
-RUN chown -R pricefeeder:pricefeeder /app
-USER pricefeeder
+# Install Python for initialization scripts
+RUN apk add --no-cache python3 py3-pip && \
+    pip3 install requests
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
-  CMD curl -f http://localhost:8080/health || exit 1
+# Copy published application
+COPY --from=build /app/publish .
 
-# Default command
+# Copy scripts
+COPY scripts/*.py /scripts/
+
+# Copy configuration
+COPY src/PriceFeed.Console/appsettings.json .
+COPY src/PriceFeed.Console/appsettings.Production.json* .
+
+# Create non-root user
+RUN adduser -D -u 1000 pricefeed && \
+    chown -R pricefeed:pricefeed /app /scripts
+
+USER pricefeed
+
+# Set environment
+ENV DOTNET_ENVIRONMENT=Production
+ENV ASPNETCORE_ENVIRONMENT=Production
+
+# Entry point
 ENTRYPOINT ["dotnet", "PriceFeed.Console.dll"]

@@ -1,0 +1,107 @@
+name: Contract Deployment and Initialization
+
+on:
+  workflow_dispatch:  # Manual trigger only
+    inputs:
+      action:
+        description: 'Action to perform'
+        required: true
+        default: 'verify'
+        type: choice
+        options:
+        - verify
+        - init-execute
+        - deploy
+        - full
+      environment:
+        description: 'Target environment'
+        required: true
+        default: 'testnet'
+        type: choice
+        options:
+        - testnet
+        - mainnet
+
+env:
+  DOTNET_VERSION: '9.0.x'
+
+jobs:
+  contract-operations:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+
+    - name: Restore dependencies
+      run: dotnet restore
+
+    - name: Build
+      run: dotnet build --configuration Release --no-restore
+
+    - name: Verify environment
+      run:  < /dev/null | 
+        echo "Action: ${{ inputs.action }}"
+        echo "Environment: ${{ inputs.environment }}"
+        echo "Contract Hash: ${{ secrets.CONTRACT_SCRIPT_HASH }}"
+
+    - name: Execute contract operation
+      run: |
+        cd src/PriceFeed.ContractDeployer
+        dotnet run --configuration Release ${{ inputs.action }}
+      env:
+        # Environment configuration
+        DOTNET_ENVIRONMENT: ${{ inputs.environment == 'mainnet' && 'Production' || 'Development' }}
+        
+        # Neo RPC endpoints
+        NEO_RPC_ENDPOINT: ${{ inputs.environment == 'mainnet' && secrets.NEO_RPC_ENDPOINT_MAINNET || secrets.NEO_RPC_ENDPOINT || 'http://seed1t5.neo.org:20332' }}
+        
+        # Contract configuration
+        CONTRACT_SCRIPT_HASH: ${{ secrets.CONTRACT_SCRIPT_HASH }}
+        
+        # Account configuration
+        MASTER_ACCOUNT_ADDRESS: ${{ secrets.MASTER_ACCOUNT_ADDRESS }}
+        MASTER_ACCOUNT_PRIVATE_KEY: ${{ secrets.MASTER_ACCOUNT_PRIVATE_KEY }}
+        TEE_ACCOUNT_ADDRESS: ${{ secrets.TEE_ACCOUNT_ADDRESS }}
+        TEE_ACCOUNT_PRIVATE_KEY: ${{ secrets.TEE_ACCOUNT_PRIVATE_KEY }}
+
+    - name: Generate summary
+      if: always()
+      run: |
+        echo "## Contract Operation Summary" >> $GITHUB_STEP_SUMMARY
+        echo "- **Action**: ${{ inputs.action }}" >> $GITHUB_STEP_SUMMARY
+        echo "- **Environment**: ${{ inputs.environment }}" >> $GITHUB_STEP_SUMMARY
+        echo "- **Status**: ${{ job.status }}" >> $GITHUB_STEP_SUMMARY
+        echo "- **Run ID**: ${{ github.run_id }}" >> $GITHUB_STEP_SUMMARY
+        
+        if [[ "${{ job.status }}" == "success" ]]; then
+          echo "✅ Operation completed successfully" >> $GITHUB_STEP_SUMMARY
+          if [[ "${{ inputs.action }}" == "verify" ]]; then
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "**Next Steps:**" >> $GITHUB_STEP_SUMMARY
+            echo "- If contract needs initialization, run this workflow again with 'init-execute'" >> $GITHUB_STEP_SUMMARY
+            echo "- If contract is ready, the price feed will run automatically on schedule" >> $GITHUB_STEP_SUMMARY
+          fi
+        else
+          echo "❌ Operation failed - check logs for details" >> $GITHUB_STEP_SUMMARY
+        fi
+
+    - name: Upload operation logs
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: contract-operation-logs-${{ inputs.action }}-${{ github.run_number }}
+        path: |
+          src/PriceFeed.ContractDeployer/logs/
+          *.log
+        retention-days: 90
+        if-no-files-found: ignore

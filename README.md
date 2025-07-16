@@ -44,8 +44,47 @@ For detailed information, see:
 - **Network**: Neo N3 TestNet
 - **Status**: ⚠️ Needs Initialization
 
-📋 **Quick Start**: See [INITIALIZATION_GUIDE.md](INITIALIZATION_GUIDE.md) to initialize the contract.
+📋 **Quick Start**: Run `cd src/PriceFeed.ContractDeployer && dotnet run init-execute` to generate initialization commands.
 📊 **Explorer**: [View on TestNet](https://testnet.explorer.onegate.space/contract/0xc14ffc3f28363fe59645873b28ed3ed8ccb774cc)
+
+## Contract Initialization
+
+The deployed contract requires initialization before price feeds can be sent. The ContractDeployer provides a programmatic solution:
+
+```bash
+# Navigate to the ContractDeployer
+cd src/PriceFeed.ContractDeployer
+
+# Generate initialization commands (validates all steps)
+dotnet run init-execute
+
+# Alternative: Check current contract state
+dotnet run verify
+```
+
+This will generate ready-to-use commands for two options:
+
+**Option 1: Neo-Mamba (Recommended)**
+```bash
+pip install neo-mamba
+neo-mamba contract invoke 0xc14ffc3f28363fe59645873b28ed3ed8ccb774cc initialize "NTmHjwiadq4g3VHpJ5FQigQcD4fF5m8TyX" "NiNmXL8FjEUEs1nfX9uHFBNaenxDHJtmuB" --wallet-wif <YOUR_WIF> --rpc http://seed1t5.neo.org:20332
+neo-mamba contract invoke 0xc14ffc3f28363fe59645873b28ed3ed8ccb774cc addOracle "NiNmXL8FjEUEs1nfX9uHFBNaenxDHJtmuB" --wallet-wif <YOUR_WIF> --rpc http://seed1t5.neo.org:20332
+neo-mamba contract invoke 0xc14ffc3f28363fe59645873b28ed3ed8ccb774cc setMinOracles 1 --wallet-wif <YOUR_WIF> --rpc http://seed1t5.neo.org:20332
+```
+
+**Option 2: Neo-CLI**
+```bash
+invoke 0xc14ffc3f28363fe59645873b28ed3ed8ccb774cc initialize ["NTmHjwiadq4g3VHpJ5FQigQcD4fF5m8TyX","NiNmXL8FjEUEs1nfX9uHFBNaenxDHJtmuB"] NTmHjwiadq4g3VHpJ5FQigQcD4fF5m8TyX
+invoke 0xc14ffc3f28363fe59645873b28ed3ed8ccb774cc addOracle ["NiNmXL8FjEUEs1nfX9uHFBNaenxDHJtmuB"] NTmHjwiadq4g3VHpJ5FQigQcD4fF5m8TyX
+invoke 0xc14ffc3f28363fe59645873b28ed3ed8ccb774cc setMinOracles [1] NTmHjwiadq4g3VHpJ5FQigQcD4fF5m8TyX
+```
+
+The initialization process:
+1. **Initialize**: Sets the contract owner and TEE account
+2. **Add Oracle**: Registers the TEE account as an authorized oracle
+3. **Set Min Oracles**: Sets the minimum required oracles to 1
+
+After initialization, verify success with `dotnet run verify`.
 
 ## Features
 

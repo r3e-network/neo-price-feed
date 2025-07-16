@@ -23,7 +23,7 @@ public class ResiliencePoliciesTests
         _mockLogger = new Mock<ILogger>();
     }
 
-    [Fact]
+    [Fact(Timeout = 30000)] // 30 second timeout
     public async Task GetRetryPolicy_RetriesOnTransientErrors()
     {
         // Arrange
@@ -161,7 +161,7 @@ public class ResiliencePoliciesTests
         Assert.Equal(HttpStatusCode.OK, result.StatusCode);
     }
 
-    [Fact]
+    [Fact(Timeout = 30000)] // 30 second timeout
     public async Task GetCombinedPolicy_AppliesAllPoliciesInOrder()
     {
         // Arrange
@@ -249,18 +249,20 @@ public class ResiliencePoliciesTests
         Assert.False(fallbackExecuted);
     }
 
-    [Fact]
+    [Fact(Timeout = 15000)] // 15 second timeout
     public async Task GetBulkheadPolicy_LimitsParallelExecution()
     {
         // Arrange
-        var policy = ResiliencePolicies.GetBulkheadPolicy(2, 1); // Max 2 parallel, 1 queued
+        var policy = ResiliencePolicies.GetBulkheadPolicy(2, 0); // Max 2 parallel, 0 queued for predictable behavior
         var executionCount = 0;
         var maxConcurrent = 0;
         var lockObj = new object();
+        var successCount = 0;
+        var rejectedCount = 0;
 
         // Act
-        var tasks = new Task[5];
-        for (int i = 0; i < 5; i++)
+        var tasks = new Task[4]; // Reduced from 5 to 4 to make it more predictable
+        for (int i = 0; i < 4; i++)
         {
             tasks[i] = Task.Run(async () =>
             {
@@ -274,24 +276,30 @@ public class ResiliencePoliciesTests
                             maxConcurrent = Math.Max(maxConcurrent, executionCount);
                         }
 
-                        await Task.Delay(100);
+                        await Task.Delay(50); // Reduced delay to speed up test
 
                         lock (lockObj)
                         {
                             executionCount--;
+                            successCount++;
                         }
                     });
                 }
                 catch (BulkheadRejectedException)
                 {
                     // Expected for tasks that exceed the bulkhead capacity
+                    Interlocked.Increment(ref rejectedCount);
                 }
             });
         }
 
-        await Task.WhenAll(tasks);
+        // Add timeout to prevent infinite waiting
+        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+        await Task.WhenAll(tasks).WaitAsync(cts.Token);
 
         // Assert
         Assert.True(maxConcurrent <= 2, $"Max concurrent executions was {maxConcurrent}, expected <= 2");
+        Assert.True(successCount + rejectedCount == 4, $"Expected 4 total operations, got {successCount + rejectedCount}");
+        Assert.True(rejectedCount >= 2, $"Expected at least 2 rejections, got {rejectedCount}");
     }
 }
