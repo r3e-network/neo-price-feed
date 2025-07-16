@@ -52,9 +52,9 @@ jobs:
     - name: Initialize contract if needed
       env:
         MASTER_ACCOUNT_PRIVATE_KEY: ${{ secrets.MASTER_ACCOUNT_PRIVATE_KEY }}
-        TEE_ACCOUNT_PRIVATE_KEY: ${{ secrets.TEE_ACCOUNT_PRIVATE_KEY }}
+        TEE_ACCOUNT_PRIVATE_KEY: ${{ secrets.NEO_TEE_ACCOUNT_PRIVATE_KEY }}
         ORACLE_CONTRACT_HASH: ${{ secrets.ORACLE_CONTRACT_HASH }}
-        NEO_RPC_URL: ${{ secrets.NEO_RPC_URL }}
+        NEO_RPC_URL: ${{ secrets.NEO_RPC_URL || 'http://seed1t5.neo.org:20332' }}
       run: |
         echo "Checking if contract needs initialization..."
         python scripts/initialize-contract-rpc.py
@@ -62,11 +62,21 @@ jobs:
 
     - name: Run Price Feed Service
       env:
+        # Account configuration - map from GitHub secrets to expected names
+        MASTER_ACCOUNT_ADDRESS: ${{ secrets.MASTER_ACCOUNT_ADDRESS }}
         MASTER_ACCOUNT_PRIVATE_KEY: ${{ secrets.MASTER_ACCOUNT_PRIVATE_KEY }}
-        TEE_ACCOUNT_PRIVATE_KEY: ${{ secrets.TEE_ACCOUNT_PRIVATE_KEY }}
-        ORACLE_CONTRACT_HASH: ${{ secrets.ORACLE_CONTRACT_HASH }}
-        NEO_RPC_URL: ${{ secrets.NEO_RPC_URL }}
+        TEE_ACCOUNT_ADDRESS: ${{ secrets.NEO_TEE_ACCOUNT_ADDRESS }}
+        TEE_ACCOUNT_PRIVATE_KEY: ${{ secrets.NEO_TEE_ACCOUNT_PRIVATE_KEY }}
+        
+        # Neo blockchain configuration
+        ORACLE_CONTRACT_HASH: ${{ secrets.ORACLE_CONTRACT_HASH || '0xc14ffc3f28363fe59645873b28ed3ed8ccb774cc' }}
+        NEO_RPC_URL: ${{ secrets.NEO_RPC_URL || 'http://seed1t5.neo.org:20332' }}
+        
+        # API configuration
+        COINMARKETCAP_API_KEY: ${{ secrets.COINMARKETCAP_API_KEY }}
         PRICE_FEED_API_URL: ${{ secrets.PRICE_FEED_API_URL }}
+        
+        # Processing configuration
         BATCH_SIZE: ${{ vars.BATCH_SIZE || '10' }}
         PRICE_UPDATE_INTERVAL_MINUTES: ${{ vars.PRICE_UPDATE_INTERVAL_MINUTES || '15' }}
         CONTRACT_GAS_FEE: ${{ vars.CONTRACT_GAS_FEE || '0.05' }}
@@ -76,10 +86,13 @@ jobs:
           echo "Using pre-built Docker image"
           # Run the price feed container for a single iteration
           docker run --rm \
+            -e MASTER_ACCOUNT_ADDRESS \
             -e MASTER_ACCOUNT_PRIVATE_KEY \
+            -e TEE_ACCOUNT_ADDRESS \
             -e TEE_ACCOUNT_PRIVATE_KEY \
             -e ORACLE_CONTRACT_HASH \
             -e NEO_RPC_URL \
+            -e COINMARKETCAP_API_KEY \
             -e PRICE_FEED_API_URL \
             -e BATCH_SIZE \
             -e PRICE_UPDATE_INTERVAL_MINUTES \
@@ -97,8 +110,8 @@ jobs:
     - name: Test Price Feed Results
       if: success()
       env:
-        ORACLE_CONTRACT_HASH: ${{ secrets.ORACLE_CONTRACT_HASH }}
-        NEO_RPC_URL: ${{ secrets.NEO_RPC_URL }}
+        ORACLE_CONTRACT_HASH: ${{ secrets.ORACLE_CONTRACT_HASH || '0xc14ffc3f28363fe59645873b28ed3ed8ccb774cc' }}
+        NEO_RPC_URL: ${{ secrets.NEO_RPC_URL || 'http://seed1t5.neo.org:20332' }}
       run: |
         echo "Testing price feed results..."
         python scripts/test-price-feed.py
