@@ -27,14 +27,12 @@ RUN dotnet publish src/PriceFeed.Console/PriceFeed.Console.csproj \
 FROM mcr.microsoft.com/dotnet/runtime:9.0-alpine AS runtime
 WORKDIR /app
 
-# Install Python for initialization scripts
-RUN apk add --no-cache python3 py3-requests
+# No additional runtime dependencies needed
 
 # Copy published application
 COPY --from=build /app/publish .
 
-# Copy scripts
-COPY scripts/*.py /scripts/
+# Scripts are not needed in the container - they're used externally
 
 # Copy configuration
 COPY src/PriceFeed.Console/appsettings.json .
@@ -42,7 +40,7 @@ COPY src/PriceFeed.Console/appsettings.Production.json* .
 
 # Create non-root user
 RUN adduser -D -u 1000 pricefeed && \
-    chown -R pricefeed:pricefeed /app /scripts
+    chown -R pricefeed:pricefeed /app
 
 USER pricefeed
 
