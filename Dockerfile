@@ -28,8 +28,7 @@ FROM mcr.microsoft.com/dotnet/runtime:9.0-alpine AS runtime
 WORKDIR /app
 
 # Install Python for initialization scripts
-RUN apk add --no-cache python3 py3-pip && \
-    pip3 install requests
+RUN apk add --no-cache python3 py3-requests
 
 # Copy published application
 COPY --from=build /app/publish .
