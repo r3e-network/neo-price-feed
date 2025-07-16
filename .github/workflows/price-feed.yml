@@ -55,32 +55,18 @@ jobs:
 
     - name: Restore dependencies
       run: |
-        # Restore only the projects we need
-        dotnet restore src/PriceFeed.Core/PriceFeed.Core.csproj
-        dotnet restore src/PriceFeed.Infrastructure/PriceFeed.Infrastructure.csproj
-        dotnet restore src/PriceFeed.Console/PriceFeed.Console.csproj
-        dotnet restore src/PriceFeed.ContractDeployer/PriceFeed.ContractDeployer.csproj
-        dotnet restore test/PriceFeed.Tests/PriceFeed.Tests.csproj
+        # Use CI-specific solution that excludes contracts
+        dotnet restore PriceFeed.CI.sln
 
-    - name: Build (excluding contracts)
+    - name: Build
       run: |
-        # Build all projects except the contracts project
-        dotnet build --configuration Release --no-restore \
-          src/PriceFeed.Core/PriceFeed.Core.csproj
-        dotnet build --configuration Release --no-restore \
-          src/PriceFeed.Infrastructure/PriceFeed.Infrastructure.csproj
-        dotnet build --configuration Release --no-restore \
-          src/PriceFeed.Console/PriceFeed.Console.csproj
-        dotnet build --configuration Release --no-restore \
-          src/PriceFeed.ContractDeployer/PriceFeed.ContractDeployer.csproj
-        dotnet build --configuration Release --no-restore \
-          test/PriceFeed.Tests/PriceFeed.Tests.csproj
+        # Build using CI solution (excludes contracts project)
+        dotnet build PriceFeed.CI.sln --configuration Release --no-restore
 
     - name: Run tests
       run: |
-        # Run tests only for non-contract projects
-        dotnet test --configuration Release --no-build --verbosity normal \
-          test/PriceFeed.Tests/PriceFeed.Tests.csproj
+        # Run tests using CI solution
+        dotnet test PriceFeed.CI.sln --configuration Release --no-build --verbosity normal
       continue-on-error: true  # Don't fail the price feed if tests fail
 
     - name: Debug - Check environment variables
