@@ -41,9 +41,9 @@ jobs:
           --no-build \
           --verbosity normal \
           --collect:"XPlat Code Coverage" \
-          --blame-hang-timeout 5m \
+          --blame-hang-timeout 3m \
           --filter "Category!=SlowTest" \
-          -- RunConfiguration.TestSessionTimeout=300000
+          --blame-hang-dump-type full
       timeout-minutes: 8
       
     - name: Upload coverage reports
