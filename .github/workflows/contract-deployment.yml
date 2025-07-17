@@ -49,7 +49,7 @@ jobs:
       run: dotnet build --configuration Release --no-restore
 
     - name: Verify environment
-      run:  < /dev/null | 
+      run: |
         echo "Action: ${{ inputs.action }}"
         echo "Environment: ${{ inputs.environment }}"
         echo "Contract Hash: ${{ secrets.CONTRACT_SCRIPT_HASH }}"
