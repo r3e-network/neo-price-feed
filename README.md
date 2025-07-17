@@ -364,15 +364,28 @@ For detailed information about the smart contract, see the [contract documentati
 The price oracle operates with **full automation** using GitHub Actions as the Trusted Execution Environment:
 
 **🔄 Active Workflows:**
-- **Price Feed Service**: Runs every 4 hours automatically (`0 */4 * * *`)
+- **Price Feed Service**: Runs every minute automatically (`* * * * *`)
 - **Continuous Integration**: Tests on every push/PR  
 - **Docker Build & Publish**: Builds container images for deployment
 - **Contract Operations**: Manual deployment and management tools
 
 ### Current Schedule
 ```
-Every 4 hours: 00:00, 04:00, 08:00, 12:00, 16:00, 20:00 UTC
+Every minute (maximum frequency supported by GitHub Actions)
+Note: 30 seconds was requested but GitHub Actions minimum interval is 1 minute
 ```
+
+⚠️ **High Frequency Warning**: Running every minute will:
+- Consume GitHub Actions minutes very quickly (~43,800 minutes/month)
+- May hit API rate limits on data sources
+- Generate significant transaction fees on Neo network
+- Consider if this frequency is actually needed for your use case
+
+💡 **Alternative for Sub-Minute Updates**: For true 30-second intervals, consider:
+- Self-hosted runners with custom scheduling
+- Dedicated server deployment with cron jobs
+- Cloud functions with timer triggers
+- Docker containers with internal scheduling
 
 ### Workflow Architecture
 
@@ -386,10 +399,10 @@ Every 4 hours: 00:00, 04:00, 08:00, 12:00, 16:00, 20:00 UTC
 
 **2. Price Feed Automation** (`.github/workflows/price-feed.yml`):
 ```yaml
-# Runs price oracle every 4 hours
+# Runs price oracle every minute (maximum GitHub Actions frequency)
 on:
   schedule:
-    - cron: '0 */4 * * *'  # Every 4 hours
+    - cron: '* * * * *'    # Every minute (30s not supported)
   workflow_dispatch:       # Manual trigger available
 
 jobs:
