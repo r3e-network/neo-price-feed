@@ -41,7 +41,7 @@ For detailed information, see:
 
 - **Contract Hash**: `0xc14ffc3f28363fe59645873b28ed3ed8ccb774cc`
 - **Network**: Neo N3 TestNet
-- **Status**: 🟢 **OPERATIONAL** - Receiving price updates every 10 minutes
+- **Status**: 🟢 **OPERATIONAL** - Receiving price updates every 15 seconds during 5-minute execution windows
 - **TEE Account**: `NiNmXL8FjEUEs1nfX9uHFBNaenxDHJtmuB`
 - **Latest Activity**: Processing 19+ cryptocurrency prices per batch
 
@@ -299,6 +299,9 @@ The application supports the following command-line options:
 | `--test-price-feed` | Run the price feed service with test data and exit. |
 | `--test-mock-price-feed` | Run the price feed service with mock data sources and exit. |
 | `--generate-account` | Generate a new Neo account for use with the price feed service. |
+| `--continuous` | Run in continuous execution mode. |
+| `--duration <minutes>` | Duration for continuous execution (default: 5 minutes). |
+| `--interval <seconds>` | Update interval in continuous mode (default: 15 seconds). |
 | `--help` | Display help information. |
 
 #### Configuring Intervals
@@ -371,15 +374,18 @@ The price oracle operates with **full automation** using GitHub Actions as the T
 
 ### Current Schedule
 ```
-Every 10 minutes (00:00, 00:10, 00:20, 00:30, 00:40, 00:50, etc.)
+Every 10 minutes: Workflow starts and runs for 5 minutes
+  - Updates prices every 15 seconds during execution
+  - ~20 price updates per workflow run
+  - ~2,880 price updates per day
 ```
 
-✅ **Balanced Schedule Benefits**:
-- Provides frequent price updates (144 times per day)
-- Reasonable GitHub Actions usage (~4,320 minutes/month)
-- Stays within API rate limits for most data sources
-- Cost-effective Neo network transaction fees
-- Good balance between freshness and resource consumption
+✅ **Continuous Execution Benefits**:
+- Ultra-fresh price data (15-second intervals during active periods)
+- Efficient resource utilization (5 minutes active, 5 minutes idle)
+- Optimized GitHub Actions usage (~21,600 minutes/month)
+- Respects API rate limits with interval spacing
+- Maximizes price freshness while controlling costs
 
 ### Workflow Architecture
 
@@ -393,7 +399,7 @@ Every 10 minutes (00:00, 00:10, 00:20, 00:30, 00:40, 00:50, etc.)
 
 **2. Price Feed Automation** (`.github/workflows/price-feed.yml`):
 ```yaml
-# Runs price oracle every 10 minutes for balanced frequency
+# Runs price oracle every 10 minutes with continuous execution
 on:
   schedule:
     - cron: '*/10 * * * *'  # Every 10 minutes
@@ -409,7 +415,8 @@ jobs:
       - Sparse checkout (scripts only)
       - Initialize contract if needed  
       - Pull latest Docker image
-      - Run price feed with dual-signature
+      - Run price feed in continuous mode:
+        docker run ... --continuous --duration 5 --interval 15
       - Test results and upload logs
 ```
 

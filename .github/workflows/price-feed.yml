@@ -84,7 +84,7 @@ jobs:
         # Try to pull the latest image, fall back to build if not available
         if docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest 2>/dev/null; then
           echo "Using pre-built Docker image"
-          # Run the price feed container for a single iteration
+          # Run the price feed container in continuous mode for 5 minutes with 15-second intervals
           docker run --rm \
             -e MASTER_ACCOUNT_ADDRESS \
             -e MASTER_ACCOUNT_PRIVATE_KEY \
@@ -99,7 +99,7 @@ jobs:
             -e CONTRACT_GAS_FEE \
             -v ${{ github.workspace }}/logs:/app/logs \
             ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest \
-            --single-run
+            --continuous --duration 5 --interval 15
         else
           echo "Docker image not available. Please run the Build and Publish workflow first."
           echo "To build the image, run: gh workflow run build-and-publish.yml"

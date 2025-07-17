@@ -24,16 +24,18 @@ This directory contains GitHub Actions workflows for the Neo Price Feed project.
 - **Timeout**: 30 minutes
 
 ### 3. Run Price Feed Service (`price-feed.yml`)
-- **Trigger**: Every 4 hours via cron schedule or manual dispatch
+- **Trigger**: Every 10 minutes via cron schedule or manual dispatch
 - **Purpose**: Execute price feed service to update on-chain prices
+- **Execution Mode**: Continuous execution for 5 minutes with 15-second intervals
 - **Steps**:
   1. Sparse checkout (scripts only)
   2. Initialize contract if needed
   3. Pull latest Docker image
-  4. Run price feed service with dual-signature support
+  4. Run price feed service in continuous mode (--continuous --duration 5 --interval 15)
   5. Test results and upload logs
 - **Environment**: Production or testnet
 - **Timeout**: 30 minutes
+- **Update Frequency**: ~20 price updates per workflow run (5 minutes ÷ 15 seconds)
 
 ### 4. Contract Deployment (`contract-deployment.yml`)
 - **Trigger**: Manual dispatch only
