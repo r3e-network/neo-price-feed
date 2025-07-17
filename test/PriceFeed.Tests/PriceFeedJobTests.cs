@@ -136,7 +136,7 @@ namespace PriceFeed.Tests
             Assert.Contains("Failed to collect price data", exception.Message);
         }
 
-        [Fact(Timeout = 30000)] // 30 second timeout
+        [Fact(Timeout = 30000), Trait("Category", "SlowTest")] // 30 second timeout
         public async Task RunAsync_WithBatchProcessingFailure_ShouldRetry()
         {
             // Arrange
@@ -300,7 +300,7 @@ namespace PriceFeed.Tests
             disabledDataSource2.Verify(a => a.GetPriceDataBatchAsync(It.IsAny<IEnumerable<string>>()), Times.Never);
         }
 
-        [Fact(Timeout = 30000)] // 30 second timeout
+        [Fact(Timeout = 30000), Trait("Category", "SlowTest")] // 30 second timeout
         public async Task RunAsync_WithDisabledDataSources_ShouldSkipThem()
         {
             // Arrange

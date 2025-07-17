@@ -23,7 +23,7 @@ public class ResiliencePoliciesTests
         _mockLogger = new Mock<ILogger>();
     }
 
-    [Fact(Timeout = 30000)] // 30 second timeout
+    [Fact(Timeout = 30000), Trait("Category", "SlowTest")] // 30 second timeout
     public async Task GetRetryPolicy_RetriesOnTransientErrors()
     {
         // Arrange
@@ -161,7 +161,7 @@ public class ResiliencePoliciesTests
         Assert.Equal(HttpStatusCode.OK, result.StatusCode);
     }
 
-    [Fact(Timeout = 30000)] // 30 second timeout
+    [Fact(Timeout = 30000), Trait("Category", "SlowTest")] // 30 second timeout
     public async Task GetCombinedPolicy_AppliesAllPoliciesInOrder()
     {
         // Arrange

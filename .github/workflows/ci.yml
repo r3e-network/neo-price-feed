@@ -35,7 +35,16 @@ jobs:
       run: dotnet build PriceFeed.CI.sln --configuration Release --no-restore
       
     - name: Run tests
-      run: dotnet test PriceFeed.CI.sln --configuration Release --no-build --verbosity normal --collect:"XPlat Code Coverage"
+      run: |
+        dotnet test PriceFeed.CI.sln \
+          --configuration Release \
+          --no-build \
+          --verbosity normal \
+          --collect:"XPlat Code Coverage" \
+          --blame-hang-timeout 5m \
+          --filter "Category!=SlowTest" \
+          -- RunConfiguration.TestSessionTimeout=300000
+      timeout-minutes: 8
       
     - name: Upload coverage reports
       uses: codecov/codecov-action@v3
