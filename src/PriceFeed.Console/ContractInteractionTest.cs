@@ -24,12 +24,12 @@ namespace PriceFeed.Console
     {
         // Your deployed contract hash
         private static readonly string ContractHash = "0xab8e532653f79d60e6a7d2ce9d8be7a80b5f4cad";
-        
+
         // Neo Express RPC endpoint
         private static readonly string RpcEndpoint = "http://localhost:20332";
-        
+
         private static readonly HttpClient HttpClient = new HttpClient();
-        
+
         /// <summary>
         /// Runs the contract interaction tests
         /// </summary>
@@ -39,18 +39,18 @@ namespace PriceFeed.Console
         public static async Task<int> RunTest(string? oracleAccountWif = null, string? readerAccountWif = null)
         {
             Log.Information("Starting contract interaction test...");
-            
+
             try
             {
                 // Test 1: Read price data (Consumer functionality)
                 await TestReadPrice();
-                
+
                 // Test 2: Read complete price data
                 await TestReadPriceData();
-                
+
                 // Test 3: Check contract status
                 await TestContractStatus();
-                
+
                 // Test 4: Oracle-specific tests (if WIF provided)
                 if (!string.IsNullOrEmpty(oracleAccountWif))
                 {
@@ -61,7 +61,7 @@ namespace PriceFeed.Console
                     Log.Warning("No oracle account WIF provided. Skipping oracle-specific tests.");
                     Log.Information("To test oracle functionality, provide --oracle-wif parameter");
                 }
-                
+
                 Log.Information("Contract interaction test completed successfully");
                 return 0;
             }
@@ -71,18 +71,18 @@ namespace PriceFeed.Console
                 return 1;
             }
         }
-        
+
         /// <summary>
         /// Test reading a price (implementing README example)
         /// </summary>
         private static async Task TestReadPrice()
         {
             Log.Information("Testing GetPrice method...");
-            
+
             try
             {
                 var symbol = "BTCUSDT";
-                
+
                 // Create RPC request to invoke the GetPrice method
                 var rpcRequest = new
                 {
@@ -99,9 +99,9 @@ namespace PriceFeed.Console
                     },
                     id = 1
                 };
-                
+
                 var result = await MakeRpcCall(rpcRequest);
-                
+
                 if (result != null && result.ContainsKey("result"))
                 {
                     var invokeResult = result["result"] as Newtonsoft.Json.Linq.JObject;
@@ -118,14 +118,14 @@ namespace PriceFeed.Console
                                 {
                                     // Convert the price to a decimal (assuming 8 decimal places)
                                     var actualPrice = (decimal)price / 100000000;
-                                    
+
                                     if (price == 0)
                                     {
                                         Log.Information("Price for {Symbol}: No data available (price is 0)", symbol);
                                     }
                                     else
                                     {
-                                        Log.Information("Price for {Symbol}: {Price} (raw: {RawPrice})", 
+                                        Log.Information("Price for {Symbol}: {Price} (raw: {RawPrice})",
                                             symbol, actualPrice, price);
                                     }
                                 }
@@ -154,7 +154,7 @@ namespace PriceFeed.Console
                 {
                     Log.Warning("Failed to get price for {Symbol}. Invalid RPC response", symbol);
                 }
-                
+
                 Log.Information("GetPrice test completed successfully");
             }
             catch (Exception ex)
@@ -163,18 +163,18 @@ namespace PriceFeed.Console
                 throw;
             }
         }
-        
+
         /// <summary>
         /// Test reading complete price data
         /// </summary>
         private static async Task TestReadPriceData()
         {
             Log.Information("Testing GetPriceData method...");
-            
+
             try
             {
                 var symbol = "BTCUSDT";
-                
+
                 // Create RPC request to invoke the GetPriceData method
                 var rpcRequest = new
                 {
@@ -191,9 +191,9 @@ namespace PriceFeed.Console
                     },
                     id = 1
                 };
-                
+
                 var result = await MakeRpcCall(rpcRequest);
-                
+
                 if (result != null && result.ContainsKey("result"))
                 {
                     var invokeResult = result["result"] as Newtonsoft.Json.Linq.JObject;
@@ -211,13 +211,13 @@ namespace PriceFeed.Console
                                     var priceObj = priceDataArray[0] as Newtonsoft.Json.Linq.JObject;
                                     var timestampObj = priceDataArray[1] as Newtonsoft.Json.Linq.JObject;
                                     var confidenceObj = priceDataArray[2] as Newtonsoft.Json.Linq.JObject;
-                                    
+
                                     if (priceObj != null && timestampObj != null && confidenceObj != null)
                                     {
                                         var priceValue = priceObj["value"]?.ToString();
                                         var timestampValue = timestampObj["value"]?.ToString();
                                         var confidenceValue = confidenceObj["value"]?.ToString();
-                                        
+
                                         if (BigInteger.TryParse(priceValue, out var price) &&
                                             BigInteger.TryParse(timestampValue, out var timestamp) &&
                                             BigInteger.TryParse(confidenceValue, out var confidence))
@@ -225,7 +225,7 @@ namespace PriceFeed.Console
                                             // Convert values
                                             var actualPrice = (decimal)price / 100000000;
                                             var dateTime = timestamp > 0 ? DateTimeOffset.FromUnixTimeSeconds((long)timestamp) : DateTimeOffset.MinValue;
-                                            
+
                                             Log.Information("Complete price data for {Symbol}:", symbol);
                                             if (price == 0)
                                             {
@@ -235,7 +235,7 @@ namespace PriceFeed.Console
                                             {
                                                 Log.Information("  Price: {Price} (raw: {RawPrice})", actualPrice, price);
                                             }
-                                            
+
                                             if (timestamp == 0)
                                             {
                                                 Log.Information("  Timestamp: No data available (timestamp is 0)");
@@ -244,7 +244,7 @@ namespace PriceFeed.Console
                                             {
                                                 Log.Information("  Timestamp: {Timestamp} ({DateTime})", timestamp, dateTime);
                                             }
-                                            
+
                                             Log.Information("  Confidence: {Confidence}%", confidence);
                                         }
                                         else
@@ -282,7 +282,7 @@ namespace PriceFeed.Console
                 {
                     Log.Warning("Failed to get price data for {Symbol}. Invalid RPC response", symbol);
                 }
-                
+
                 Log.Information("GetPriceData test completed successfully");
             }
             catch (Exception ex)
@@ -291,14 +291,14 @@ namespace PriceFeed.Console
                 throw;
             }
         }
-        
+
         /// <summary>
         /// Test contract status methods
         /// </summary>
         private static async Task TestContractStatus()
         {
             Log.Information("Testing contract status methods...");
-            
+
             try
             {
                 // Test IsPaused
@@ -314,7 +314,7 @@ namespace PriceFeed.Console
                     },
                     id = 1
                 };
-                
+
                 var pausedResult = await MakeRpcCall(pausedRequest);
                 if (pausedResult != null && pausedResult.ContainsKey("result"))
                 {
@@ -333,7 +333,7 @@ namespace PriceFeed.Console
                         }
                     }
                 }
-                
+
                 // Test GetOwner
                 var ownerRequest = new
                 {
@@ -347,7 +347,7 @@ namespace PriceFeed.Console
                     },
                     id = 1
                 };
-                
+
                 var ownerResult = await MakeRpcCall(ownerRequest);
                 if (ownerResult != null && ownerResult.ContainsKey("result"))
                 {
@@ -387,7 +387,7 @@ namespace PriceFeed.Console
                         }
                     }
                 }
-                
+
                 Log.Information("Contract status test completed successfully");
             }
             catch (Exception ex)
@@ -396,23 +396,23 @@ namespace PriceFeed.Console
                 throw;
             }
         }
-        
+
         /// <summary>
         /// Test oracle-specific functionality
         /// </summary>
         private static async Task TestOracleStatus(string oracleAccountWif)
         {
             Log.Information("Testing oracle status...");
-            
+
             try
             {
                 // Create key pair from WIF
                 var keyPair = CreateKeyPairFromWIF(oracleAccountWif);
                 var scriptHash = Contract.CreateSignatureContract(keyPair.PublicKey).ScriptHash;
                 var oracleAddress = scriptHash.ToAddress(Neo.ProtocolSettings.Default.AddressVersion);
-                
+
                 Log.Information("Oracle account address: {Address}", oracleAddress);
-                
+
                 // Test IsOracle
                 var isOracleRequest = new
                 {
@@ -429,7 +429,7 @@ namespace PriceFeed.Console
                     },
                     id = 1
                 };
-                
+
                 var isOracleResult = await MakeRpcCall(isOracleRequest);
                 if (isOracleResult != null && isOracleResult.ContainsKey("result"))
                 {
@@ -444,7 +444,7 @@ namespace PriceFeed.Console
                             {
                                 var isOracle = oracleObj["value"]?.ToString() == "true";
                                 Log.Information("Address {Address} is oracle: {IsOracle}", oracleAddress, isOracle);
-                                
+
                                 if (!isOracle)
                                 {
                                     Log.Warning("This account is not authorized as an oracle.");
@@ -456,7 +456,7 @@ namespace PriceFeed.Console
                         }
                     }
                 }
-                
+
                 Log.Information("Oracle status test completed successfully");
             }
             catch (Exception ex)
@@ -465,7 +465,7 @@ namespace PriceFeed.Console
                 throw;
             }
         }
-        
+
         /// <summary>
         /// Make an RPC call to the Neo node
         /// </summary>
@@ -475,13 +475,13 @@ namespace PriceFeed.Console
             {
                 var json = JsonConvert.SerializeObject(request);
                 var content = new StringContent(json, Encoding.UTF8, "application/json");
-                
+
                 var response = await HttpClient.PostAsync(RpcEndpoint, content);
                 response.EnsureSuccessStatusCode();
-                
+
                 var responseContent = await response.Content.ReadAsStringAsync();
                 var result = JsonConvert.DeserializeObject<Dictionary<string, object>>(responseContent);
-                
+
                 return result;
             }
             catch (Exception ex)
@@ -490,7 +490,7 @@ namespace PriceFeed.Console
                 return null;
             }
         }
-        
+
         /// <summary>
         /// Create a KeyPair from a WIF (Wallet Import Format) string
         /// </summary>
@@ -509,7 +509,7 @@ namespace PriceFeed.Console
                 throw new ArgumentException($"Invalid WIF format: {wif}", ex);
             }
         }
-        
+
         /// <summary>
         /// Helper method to run the test from command line
         /// </summary>
@@ -519,7 +519,7 @@ namespace PriceFeed.Console
         {
             string? oracleWif = null;
             string? readerWif = null;
-            
+
             // Parse command line arguments
             for (int i = 0; i < args.Length - 1; i++)
             {
@@ -532,8 +532,8 @@ namespace PriceFeed.Console
                     readerWif = args[i + 1];
                 }
             }
-            
+
             return await RunTest(oracleWif, readerWif);
         }
     }
-} 
+}

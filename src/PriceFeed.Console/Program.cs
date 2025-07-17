@@ -311,10 +311,10 @@ try
 
             // Register services
             services.AddTransient<IPriceAggregationService, PriceAggregationService>();
-            
+
             // Register batch processing service
             services.AddTransient<IBatchProcessingService, BatchProcessingService>();
-            
+
             services.AddSingleton<RateLimiter>();
             services.AddSingleton<AttestationService>();
             services.AddSingleton<IAttestationService>(provider => provider.GetRequiredService<AttestationService>());

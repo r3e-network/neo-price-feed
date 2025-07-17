@@ -17,33 +17,33 @@ public static class EnvironmentConfiguration
     {
         // Add environment variables with custom mapping
         builder.AddEnvironmentVariables();
-        
+
         // Add in-memory configuration for mapping environment variables to settings
         var environmentOverrides = new Dictionary<string, string?>();
 
         // Map TEE account settings
         AddEnvironmentMapping(environmentOverrides, "TEE_ACCOUNT_ADDRESS", "BatchProcessing:TeeAccountAddress");
         AddEnvironmentMapping(environmentOverrides, "TEE_ACCOUNT_PRIVATE_KEY", "BatchProcessing:TeeAccountPrivateKey");
-        
+
         // Map Master account settings
         AddEnvironmentMapping(environmentOverrides, "MASTER_ACCOUNT_ADDRESS", "BatchProcessing:MasterAccountAddress");
         AddEnvironmentMapping(environmentOverrides, "MASTER_ACCOUNT_PRIVATE_KEY", "BatchProcessing:MasterAccountPrivateKey");
-        
+
         // Map network settings
         AddEnvironmentMapping(environmentOverrides, "NEO_RPC_ENDPOINT", "BatchProcessing:RpcEndpoint");
         AddEnvironmentMapping(environmentOverrides, "CONTRACT_SCRIPT_HASH", "BatchProcessing:ContractScriptHash");
-        
+
         // Map API keys
         AddEnvironmentMapping(environmentOverrides, "COINMARKETCAP_API_KEY", "CoinMarketCap:ApiKey");
         AddEnvironmentMapping(environmentOverrides, "COINGECKO_API_KEY", "CoinGecko:ApiKey");
         AddEnvironmentMapping(environmentOverrides, "KRAKEN_API_KEY", "Kraken:ApiKey");
         AddEnvironmentMapping(environmentOverrides, "KRAKEN_API_SECRET", "Kraken:ApiSecret");
-        
+
         // Map monitoring settings
         AddEnvironmentMapping(environmentOverrides, "OTLP_ENDPOINT", "OpenTelemetry:OtlpEndpoint");
 
         builder.AddInMemoryCollection(environmentOverrides!);
-        
+
         return builder;
     }
 
@@ -70,7 +70,7 @@ public static class EnvironmentConfiguration
         };
 
         var missingVars = new List<string>();
-        
+
         foreach (var varName in requiredVars)
         {
             if (string.IsNullOrEmpty(Environment.GetEnvironmentVariable(varName)))

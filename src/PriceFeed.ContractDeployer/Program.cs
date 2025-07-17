@@ -79,16 +79,16 @@ namespace PriceFeed.ContractDeployer
 
                 // Note: Contract deployment requires manual process with neo-cli
                 // This method prepares the deployment information
-                
+
                 Console.WriteLine("📋 Contract Deployment Information:");
                 Console.WriteLine($"   Contract Path: deploy/PriceFeed.Oracle.nef");
                 Console.WriteLine($"   Manifest Path: deploy/PriceFeed.Oracle.manifest.json");
                 Console.WriteLine($"   Deployer Address: {MASTER_ADDRESS}");
                 Console.WriteLine($"   Expected Contract Hash: {KNOWN_CONTRACT_HASH}");
-                
+
                 Console.WriteLine("\n⚠️  Contract deployment requires neo-cli or Neo wallet");
                 Console.WriteLine("   The contract is already deployed at: " + KNOWN_CONTRACT_HASH);
-                
+
                 return KNOWN_CONTRACT_HASH;
             }
             catch (Exception ex)
@@ -107,7 +107,7 @@ namespace PriceFeed.ContractDeployer
 
                 var contractHash = UInt160.Parse(KNOWN_CONTRACT_HASH);
                 var rpcClient = new RpcClient(new Uri(RPC_ENDPOINT));
-                
+
                 Console.WriteLine($"📍 Contract Hash: {KNOWN_CONTRACT_HASH}");
                 Console.WriteLine($"📍 Master Account: {MASTER_ADDRESS}");
                 Console.WriteLine($"📍 TEE Account: {TEE_ADDRESS}");
@@ -128,7 +128,7 @@ namespace PriceFeed.ContractDeployer
 
                 Console.WriteLine("\n🔧 Initialization Steps:");
                 Console.WriteLine("The contract needs to be initialized with the following transactions:");
-                
+
                 // Generate initialization script
                 Console.WriteLine("\n1️⃣ Initialize contract (set owner and TEE account):");
                 var initParams = new[]
@@ -136,7 +136,7 @@ namespace PriceFeed.ContractDeployer
                     new RpcStack { Type = "String", Value = MASTER_ADDRESS },
                     new RpcStack { Type = "String", Value = TEE_ADDRESS }
                 };
-                
+
                 var initResult = await rpcClient.InvokeFunctionAsync(contractHash.ToString(), "initialize", initParams);
                 if (initResult.State == VMState.HALT)
                 {
@@ -155,7 +155,7 @@ namespace PriceFeed.ContractDeployer
                 {
                     new RpcStack { Type = "String", Value = TEE_ADDRESS }
                 };
-                
+
                 var oracleResult = await rpcClient.InvokeFunctionAsync(contractHash.ToString(), "addOracle", oracleParams);
                 if (oracleResult.State == VMState.HALT)
                 {
@@ -169,7 +169,7 @@ namespace PriceFeed.ContractDeployer
                 {
                     new RpcStack { Type = "Integer", Value = "1" }
                 };
-                
+
                 var minResult = await rpcClient.InvokeFunctionAsync(contractHash.ToString(), "setMinOracles", minParams);
                 if (minResult.State == VMState.HALT)
                 {
@@ -194,7 +194,7 @@ namespace PriceFeed.ContractDeployer
                 Console.WriteLine();
                 Console.WriteLine($"# Set min oracles");
                 Console.WriteLine($"invoke {KNOWN_CONTRACT_HASH} setMinOracles [1] {MASTER_ADDRESS}");
-                
+
                 Console.WriteLine("\n✅ Initialization commands prepared!");
                 Console.WriteLine("Execute the commands above in neo-cli to complete initialization.");
             }
@@ -215,7 +215,7 @@ namespace PriceFeed.ContractDeployer
 
                 var contractHash = UInt160.Parse(KNOWN_CONTRACT_HASH);
                 var rpcClient = new RpcClient(new Uri(RPC_ENDPOINT));
-                
+
                 // Check contract state
                 var contractState = await rpcClient.GetContractStateAsync(contractHash.ToString());
                 if (contractState == null)
@@ -231,7 +231,7 @@ namespace PriceFeed.ContractDeployer
 
                 // Check initialization
                 Console.WriteLine("\n📊 Contract State:");
-                
+
                 // Get owner
                 var ownerResult = await InvokeContractMethod(rpcClient, contractHash, "getOwner");
                 if (ownerResult != null && ownerResult.State == VMState.HALT && ownerResult.Stack.Length > 0)
@@ -295,7 +295,7 @@ namespace PriceFeed.ContractDeployer
                 {
                     var priceParams = new[] { new RpcStack { Type = "String", Value = symbol } };
                     var priceResult = await rpcClient.InvokeFunctionAsync(contractHash.ToString(), "getPriceData", priceParams);
-                    
+
                     if (priceResult.State == VMState.HALT && priceResult.Stack.Length > 0)
                     {
                         if (priceResult.Stack[0].Type == Neo.VM.Types.StackItemType.Struct)
@@ -306,11 +306,11 @@ namespace PriceFeed.ContractDeployer
                                 var price = priceStruct[1].GetInteger();
                                 var timestamp = priceStruct[2].GetInteger();
                                 var confidence = priceStruct[3].GetInteger();
-                                
+
                                 var priceDecimal = (decimal)price / 100000000M;
                                 var updateTime = DateTimeOffset.FromUnixTimeMilliseconds((long)timestamp).DateTime;
                                 var ageSeconds = (DateTime.UtcNow - updateTime).TotalSeconds;
-                                
+
                                 Console.WriteLine($"   {symbol}: ${priceDecimal:F2} (Updated: {(int)ageSeconds}s ago, Confidence: {confidence}%)");
                             }
                         }
@@ -329,7 +329,7 @@ namespace PriceFeed.ContractDeployer
                 Console.WriteLine("\n💰 Account Balances:");
                 var masterBalance = await GetAccountBalance(rpcClient, MASTER_ADDRESS);
                 var teeBalance = await GetAccountBalance(rpcClient, TEE_ADDRESS);
-                
+
                 Console.WriteLine($"   Master Account: {masterBalance:F8} GAS");
                 Console.WriteLine($"   TEE Account: {teeBalance:F8} GAS");
             }
@@ -348,19 +348,19 @@ namespace PriceFeed.ContractDeployer
 
                 // Deploy is informational only
                 await DeployContract();
-                
+
                 Console.WriteLine("\n⏳ Proceeding to initialization setup...");
                 await Task.Delay(2000);
-                
+
                 // Initialize the contract
                 await InitializeContract();
-                
+
                 Console.WriteLine("\n⏳ Waiting before verification...");
                 await Task.Delay(2000);
-                
+
                 // Verify the setup
                 await VerifyContract();
-                
+
                 Console.WriteLine("\n📌 Next Steps:");
                 Console.WriteLine("1. Execute the neo-cli commands shown above to complete initialization");
                 Console.WriteLine("2. Run 'dotnet run verify' after initialization to confirm");
@@ -403,7 +403,7 @@ namespace PriceFeed.ContractDeployer
                 }
             }
             catch { }
-            
+
             return 0;
         }
 
@@ -416,7 +416,7 @@ namespace PriceFeed.ContractDeployer
 
                 var contractHash = UInt160.Parse(KNOWN_CONTRACT_HASH);
                 var rpcClient = new RpcClient(new Uri(RPC_ENDPOINT));
-                
+
                 Console.WriteLine($"📍 Contract Hash: {KNOWN_CONTRACT_HASH}");
                 Console.WriteLine($"📍 Master Account: {MASTER_ADDRESS}");
                 Console.WriteLine($"📍 TEE Account: {TEE_ADDRESS}");
@@ -436,7 +436,7 @@ namespace PriceFeed.ContractDeployer
                 }
 
                 Console.WriteLine("\n🔑 Starting initialization process...");
-                
+
                 // Step 1: Initialize contract
                 Console.WriteLine("\n1️⃣ Initializing contract with owner and TEE account...");
                 var initParams = new[]
@@ -444,12 +444,12 @@ namespace PriceFeed.ContractDeployer
                     new ContractParameter { Type = ContractParameterType.String, Value = MASTER_ADDRESS },
                     new ContractParameter { Type = ContractParameterType.String, Value = TEE_ADDRESS }
                 };
-                
+
                 try
                 {
                     var initTxHash = await TransactionSender.SendInitializeTransaction(
                         rpcClient, KNOWN_CONTRACT_HASH, MASTER_ADDRESS, TEE_ADDRESS, MASTER_WIF);
-                    
+
                     Console.WriteLine($"   ✅ Transaction sent: {initTxHash}");
                     Console.WriteLine("   ⏳ Waiting for confirmation...");
                     await WaitForTransaction(rpcClient, initTxHash);
@@ -470,12 +470,12 @@ namespace PriceFeed.ContractDeployer
                 {
                     new ContractParameter { Type = ContractParameterType.String, Value = TEE_ADDRESS }
                 };
-                
+
                 try
                 {
                     var oracleTxHash = await TransactionSender.SendAddOracleTransaction(
                         rpcClient, KNOWN_CONTRACT_HASH, TEE_ADDRESS, MASTER_WIF);
-                    
+
                     Console.WriteLine($"   ✅ Transaction sent: {oracleTxHash}");
                     Console.WriteLine("   ⏳ Waiting for confirmation...");
                     await WaitForTransaction(rpcClient, oracleTxHash);
@@ -496,12 +496,12 @@ namespace PriceFeed.ContractDeployer
                 {
                     new ContractParameter { Type = ContractParameterType.Integer, Value = 1 }
                 };
-                
+
                 try
                 {
                     var minTxHash = await TransactionSender.SendSetMinOraclesTransaction(
                         rpcClient, KNOWN_CONTRACT_HASH, 1, MASTER_WIF);
-                    
+
                     Console.WriteLine($"   ✅ Transaction sent: {minTxHash}");
                     Console.WriteLine("   ⏳ Waiting for confirmation...");
                     await WaitForTransaction(rpcClient, minTxHash);
@@ -545,11 +545,11 @@ namespace PriceFeed.ContractDeployer
                     }
                 }
                 catch { }
-                
+
                 Console.Write(".");
                 await Task.Delay(2000); // Wait 2 seconds between attempts
             }
-            
+
             Console.WriteLine(" ⚠️");
             Console.WriteLine("   Transaction not confirmed yet. It may still be processing.");
         }
