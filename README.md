@@ -35,21 +35,44 @@ For detailed information, see:
 [![Neo](https://img.shields.io/badge/Neo-N3-green.svg)](https://neo.org/)
 [![Documentation](https://img.shields.io/badge/docs-GitHub%20Pages-blue.svg)](https://r3e-network.github.io/neo-price-feed/)
 
-## 🚀 TestNet Deployment Status
+## 🚀 Live Deployment Status
 
-**✅ DEPLOYED ON NEO N3 TESTNET**
+**✅ ACTIVE ON NEO N3 TESTNET**
 
 - **Contract Hash**: `0xc14ffc3f28363fe59645873b28ed3ed8ccb774cc`
-- **Transaction**: `0x15ccc11dbe781c6878d04a713fb04bc7a9c1f162fee97d2f03014eca918c4a53`
 - **Network**: Neo N3 TestNet
-- **Status**: ⚠️ Needs Initialization
+- **Status**: 🟢 **OPERATIONAL** - Receiving price updates every 4 hours
+- **TEE Account**: `NiNmXL8FjEUEs1nfX9uHFBNaenxDHJtmuB`
+- **Latest Activity**: Processing 19+ cryptocurrency prices per batch
 
-📋 **Quick Start**: Run `cd src/PriceFeed.ContractDeployer && dotnet run init-execute` to generate initialization commands.
-📊 **Explorer**: [View on TestNet](https://testnet.explorer.onegate.space/contract/0xc14ffc3f28363fe59645873b28ed3ed8ccb774cc)
+📊 **Live Monitoring**:
+- [Contract Explorer](https://testnet.explorer.onegate.space/contract/0xc14ffc3f28363fe59645873b28ed3ed8ccb774cc)
+- [GitHub Actions Status](https://github.com/r3e-network/neo-price-feed/actions)
+- [Price Feed Workflow](https://github.com/r3e-network/neo-price-feed/actions/workflows/price-feed.yml)
 
-## Contract Initialization
+🎯 **Production Ready**: The price oracle is automatically updating with data from multiple sources including CoinGecko, Kraken, and other accessible APIs.
 
-The deployed contract requires initialization before price feeds can be sent. The ContractDeployer provides a programmatic solution:
+## Supported Cryptocurrencies
+
+The price oracle currently tracks **19+ major cryptocurrencies** including:
+
+- **BTC/USDT** - Bitcoin
+- **ETH/USDT** - Ethereum  
+- **ADA/USDT** - Cardano
+- **BNB/USDT** - Binance Coin
+- **XRP/USDT** - Ripple
+- **SOL/USDT** - Solana
+- **MATIC/USDT** - Polygon
+- **DOT/USDT** - Polkadot
+- **LINK/USDT** - Chainlink
+- **UNI/USDT** - Uniswap
+- **And more...**
+
+*Price data is aggregated from multiple sources for accuracy and reliability.*
+
+## Contract Management
+
+✅ **Contract is initialized and operational.** For contract management operations:
 
 ```bash
 # Navigate to the ContractDeployer
@@ -334,70 +357,78 @@ The solution includes a production-ready Neo N3 smart contract (`PriceOracleCont
 
 For detailed information about the smart contract, see the [contract documentation](src/PriceFeed.Contracts/README.md).
 
-## GitHub Actions Workflow
+## 🤖 Automated Deployment & Operations
 
-The price feed service is configured to run in a GitHub Actions workflow, which serves as our Trusted Execution Environment (TEE). The workflow is defined in `.github/workflows/price-feed.yml`:
+### Production Automation
 
+The price oracle operates with **full automation** using GitHub Actions as the Trusted Execution Environment:
+
+**🔄 Active Workflows:**
+- **Price Feed Service**: Runs every 4 hours automatically (`0 */4 * * *`)
+- **Continuous Integration**: Tests on every push/PR  
+- **Docker Build & Publish**: Builds container images for deployment
+- **Contract Operations**: Manual deployment and management tools
+
+### Current Schedule
+```
+Every 4 hours: 00:00, 04:00, 08:00, 12:00, 16:00, 20:00 UTC
+```
+
+### Workflow Architecture
+
+**1. Build Pipeline** (`.github/workflows/build-and-publish.yml`):
 ```yaml
-name: Neo Price Feed Service
+# Builds and publishes Docker images to GitHub Container Registry
+- Build .NET 9.0 solution (excluding contracts)
+- Create multi-platform Docker image
+- Push to ghcr.io/r3e-network/neo-price-feed:latest
+```
 
+**2. Price Feed Automation** (`.github/workflows/price-feed.yml`):
+```yaml
+# Runs price oracle every 4 hours
 on:
   schedule:
-    # Run once per week on Monday at 00:00 UTC
-    - cron: '0 0 * * 1'
-  workflow_dispatch:  # Allow manual triggering
+    - cron: '0 */4 * * *'  # Every 4 hours
+  workflow_dispatch:       # Manual trigger available
 
 jobs:
   run-price-feed:
     runs-on: ubuntu-latest
-    permissions:
-      id-token: write  # Required for attestation
-      contents: read
-
+    timeout-minutes: 30
+    environment: production  # Protected environment
+    
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v3
-
-    - name: Setup .NET
-      uses: actions/setup-dotnet@v3
-      with:
-        dotnet-version: 9.0.x
-
-    - name: Restore dependencies
-      run: dotnet restore
-
-    - name: Build
-      run: dotnet build --configuration Release --no-restore
-
-    - name: Run Price Feed
-      run: dotnet run --project src/PriceFeed.Console/PriceFeed.Console.csproj --configuration Release
-      env:
-        BINANCE_API_KEY: ${{ secrets.BINANCE_API_KEY }}
-        BINANCE_API_SECRET: ${{ secrets.BINANCE_API_SECRET }}
-        COINMARKETCAP_API_KEY: ${{ secrets.COINMARKETCAP_API_KEY }}
-        COINBASE_API_KEY: ${{ secrets.COINBASE_API_KEY }}
-        COINBASE_API_SECRET: ${{ secrets.COINBASE_API_SECRET }}
-        OKEX_API_KEY: ${{ secrets.OKEX_API_KEY }}
-        OKEX_API_SECRET: ${{ secrets.OKEX_API_SECRET }}
-        OKEX_PASSPHRASE: ${{ secrets.OKEX_PASSPHRASE }}
-        NEO_RPC_ENDPOINT: ${{ secrets.NEO_RPC_ENDPOINT }}
-        CONTRACT_SCRIPT_HASH: ${{ secrets.CONTRACT_SCRIPT_HASH }}
-        TEE_ACCOUNT_ADDRESS: ${{ secrets.TEE_ACCOUNT_ADDRESS }}
-        TEE_ACCOUNT_PRIVATE_KEY: ${{ secrets.TEE_ACCOUNT_PRIVATE_KEY }}
-        MASTER_ACCOUNT_ADDRESS: ${{ secrets.MASTER_ACCOUNT_ADDRESS }}
-        MASTER_ACCOUNT_PRIVATE_KEY: ${{ secrets.MASTER_ACCOUNT_PRIVATE_KEY }}
-        SYMBOLS: "NEOBTC,NEOUSDT,BTCUSDT,FLMUSDT"
+      - Sparse checkout (scripts only)
+      - Initialize contract if needed  
+      - Pull latest Docker image
+      - Run price feed with dual-signature
+      - Test results and upload logs
 ```
 
-### Configuring the Workflow
+**3. Environment Variables**: All sensitive data is stored as GitHub Secrets:
+```bash
+# Required secrets for production deployment
+MASTER_ACCOUNT_ADDRESS      # Master account for transaction fees
+MASTER_ACCOUNT_PRIVATE_KEY  # Master account private key (WIF format)
+NEO_TEE_ACCOUNT_ADDRESS     # TEE account address
+NEO_TEE_ACCOUNT_PRIVATE_KEY # TEE account private key (WIF format)
+ORACLE_CONTRACT_HASH        # Deployed contract hash
+NEO_RPC_URL                 # Neo RPC endpoint
+COINMARKETCAP_API_KEY       # Price data API key
+```
 
-1. **Schedule**: The workflow is configured to run once per week (Monday at 00:00 UTC) by default. You can adjust the schedule by modifying the cron expression in the workflow file.
+### Monitoring & Management
 
-2. **Manual Triggering**: You can also trigger the workflow manually using the GitHub Actions UI.
+**📊 Real-time Monitoring:**
+- [Live Workflow Runs](https://github.com/r3e-network/neo-price-feed/actions/workflows/price-feed.yml)
+- [Contract on Explorer](https://testnet.explorer.onegate.space/contract/0xc14ffc3f28363fe59645873b28ed3ed8ccb774cc)
+- [All GitHub Actions](https://github.com/r3e-network/neo-price-feed/actions)
 
-3. **Environment Variables**: All sensitive configuration is stored in GitHub Secrets and passed to the application as environment variables.
-
-4. **Symbols**: The `SYMBOLS` environment variable defines which trading pairs to include in the price feed. You can add or remove symbols as needed.
+**🎛️ Manual Operations:**
+- **Trigger Price Feed**: Use "Run workflow" button in GitHub Actions
+- **Contract Management**: Run contract deployment workflow for admin operations
+- **Emergency Stop**: Disable scheduled workflow in repository settings
 
 ## Security Considerations
 
