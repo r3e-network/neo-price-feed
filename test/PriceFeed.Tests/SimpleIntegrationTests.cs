@@ -11,6 +11,7 @@ using PriceFeed.Core.Interfaces;
 using PriceFeed.Core.Models;
 using PriceFeed.Core.Options;
 using PriceFeed.Infrastructure.Services;
+using PriceFeed.Tests.TestUtilities;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -20,7 +21,8 @@ namespace PriceFeed.Tests;
 /// Simplified integration tests for the complete price feed workflow
 /// Tests end-to-end functionality without Neo Express dependencies
 /// </summary>
-public class SimpleIntegrationTests
+[Collection("Integration")]
+public class SimpleIntegrationTests : IDisposable
 {
     private readonly ITestOutputHelper _output;
 
@@ -28,8 +30,13 @@ public class SimpleIntegrationTests
     {
         _output = output;
     }
+    
+    public void Dispose()
+    {
+        // Cleanup if needed
+    }
 
-    [Fact]
+    [CITestHelper.IntegrationFact, Trait("Category", "SlowTest")] // Integration test
     public async Task CompleteWorkflow_FetchAggregateAndProcess_ShouldSucceed()
     {
         _output.WriteLine("Testing complete workflow: fetch -> aggregate -> process");
@@ -95,7 +102,7 @@ public class SimpleIntegrationTests
         _output.WriteLine("Complete workflow test passed");
     }
 
-    [Fact]
+    [CITestHelper.IntegrationFact, Trait("Category", "SlowTest")] // Integration test with external calls
     public async Task DataSourceAdapters_ShouldReturnValidPrices()
     {
         _output.WriteLine("Testing data source adapters individually");
