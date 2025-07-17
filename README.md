@@ -50,7 +50,7 @@ For detailed information, see:
 - [GitHub Actions Status](https://github.com/r3e-network/neo-price-feed/actions)
 - [Price Feed Workflow](https://github.com/r3e-network/neo-price-feed/actions/workflows/price-feed.yml)
 
-⚠️ **Action Required**: The contract is deployed but needs to be initialized before it can receive price updates.
+⚠️ **Action Required**: Run `./scripts/one-command-init.sh` to initialize the contract (takes ~30 seconds).
 
 ## Supported Cryptocurrencies
 
@@ -72,42 +72,50 @@ The price oracle currently tracks **19+ major cryptocurrencies** including:
 
 ## Contract Management
 
-⚠️ **Contract needs initialization.** Follow these steps to activate:
+⚠️ **Contract needs initialization.** Use this simple one-command process:
+
+## 🚀 One-Command Initialization
 
 ```bash
-# Navigate to the ContractDeployer
-cd src/PriceFeed.ContractDeployer
+# Set your Master Account private key (WIF format)
+export MASTER_WIF="your_master_account_private_key_here"
 
-# Generate initialization commands (validates all steps)
-dotnet run init-execute
-
-# Alternative: Check current contract state
-dotnet run verify
+# Run the initialization script
+./scripts/one-command-init.sh
 ```
 
-This will generate ready-to-use commands for two options:
+**That's it!** The script will:
+1. ✅ Install neo-mamba if needed
+2. ✅ Initialize the contract with owner and TEE account
+3. ✅ Add TEE account as an authorized oracle
+4. ✅ Set minimum oracles to 1
+5. ✅ Verify everything is working
 
-**Option 1: Neo-Mamba (Recommended)**
+## 📋 Manual Process (Alternative)
+
+If you prefer manual control:
+
 ```bash
+# Install neo-mamba
 pip install neo-mamba
-neo-mamba contract invoke 0xc14ffc3f28363fe59645873b28ed3ed8ccb774cc initialize "NTmHjwiadq4g3VHpJ5FQigQcD4fF5m8TyX" "NiNmXL8FjEUEs1nfX9uHFBNaenxDHJtmuB" --wallet-wif <YOUR_WIF> --rpc http://seed1t5.neo.org:20332
-neo-mamba contract invoke 0xc14ffc3f28363fe59645873b28ed3ed8ccb774cc addOracle "NiNmXL8FjEUEs1nfX9uHFBNaenxDHJtmuB" --wallet-wif <YOUR_WIF> --rpc http://seed1t5.neo.org:20332
-neo-mamba contract invoke 0xc14ffc3f28363fe59645873b28ed3ed8ccb774cc setMinOracles 1 --wallet-wif <YOUR_WIF> --rpc http://seed1t5.neo.org:20332
+
+# Initialize contract (replace YOUR_WIF with your Master Account WIF)
+neo-mamba contract invoke 0xc14ffc3f28363fe59645873b28ed3ed8ccb774cc initialize "NTmHjwiadq4g3VHpJ5FQigQcD4fF5m8TyX" "NiNmXL8FjEUEs1nfX9uHFBNaenxDHJtmuB" --wallet-wif YOUR_WIF --rpc http://seed1t5.neo.org:20332 --force
+
+# Add TEE as oracle
+neo-mamba contract invoke 0xc14ffc3f28363fe59645873b28ed3ed8ccb774cc addOracle "NiNmXL8FjEUEs1nfX9uHFBNaenxDHJtmuB" --wallet-wif YOUR_WIF --rpc http://seed1t5.neo.org:20332 --force
+
+# Set minimum oracles
+neo-mamba contract invoke 0xc14ffc3f28363fe59645873b28ed3ed8ccb774cc setMinOracles 1 --wallet-wif YOUR_WIF --rpc http://seed1t5.neo.org:20332 --force
 ```
 
-**Option 2: Neo-CLI**
+## 🔍 Verify Status
+
+Check if initialization was successful:
+
 ```bash
-invoke 0xc14ffc3f28363fe59645873b28ed3ed8ccb774cc initialize ["NTmHjwiadq4g3VHpJ5FQigQcD4fF5m8TyX","NiNmXL8FjEUEs1nfX9uHFBNaenxDHJtmuB"] NTmHjwiadq4g3VHpJ5FQigQcD4fF5m8TyX
-invoke 0xc14ffc3f28363fe59645873b28ed3ed8ccb774cc addOracle ["NiNmXL8FjEUEs1nfX9uHFBNaenxDHJtmuB"] NTmHjwiadq4g3VHpJ5FQigQcD4fF5m8TyX
-invoke 0xc14ffc3f28363fe59645873b28ed3ed8ccb774cc setMinOracles [1] NTmHjwiadq4g3VHpJ5FQigQcD4fF5m8TyX
+python3 scripts/quick-initialize.py
 ```
-
-The initialization process:
-1. **Initialize**: Sets the contract owner and TEE account
-2. **Add Oracle**: Registers the TEE account as an authorized oracle
-3. **Set Min Oracles**: Sets the minimum required oracles to 1
-
-After initialization, verify success with `dotnet run verify`.
 
 ## Features
 

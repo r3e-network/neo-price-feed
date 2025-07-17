@@ -49,15 +49,13 @@ jobs:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
 
-    - name: Initialize contract if needed
+    - name: Auto-initialize contract if needed
       env:
         MASTER_ACCOUNT_PRIVATE_KEY: ${{ secrets.MASTER_ACCOUNT_PRIVATE_KEY }}
-        TEE_ACCOUNT_PRIVATE_KEY: ${{ secrets.NEO_TEE_ACCOUNT_PRIVATE_KEY }}
-        ORACLE_CONTRACT_HASH: ${{ secrets.ORACLE_CONTRACT_HASH }}
         NEO_RPC_URL: ${{ secrets.NEO_RPC_URL || 'http://seed1t5.neo.org:20332' }}
       run: |
-        echo "Checking if contract needs initialization..."
-        python scripts/initialize-contract-rpc.py
+        echo "Auto-initializing contract if needed..."
+        python scripts/auto-initialize.py
       continue-on-error: true
 
     - name: Run Price Feed Service
