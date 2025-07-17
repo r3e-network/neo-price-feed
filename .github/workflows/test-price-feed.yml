@@ -37,10 +37,10 @@ jobs:
         ls -la scripts/
 
     - name: Restore dependencies
-      run: dotnet restore
+      run: dotnet restore PriceFeed.CI.sln
 
     - name: Build
-      run: dotnet build --configuration Release --no-restore
+      run: dotnet build PriceFeed.CI.sln --configuration Release --no-restore
 
     - name: Test contract deployer
       run: |
