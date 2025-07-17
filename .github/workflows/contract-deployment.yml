@@ -43,10 +43,10 @@ jobs:
         dotnet-version: ${{ env.DOTNET_VERSION }}
 
     - name: Restore dependencies
-      run: dotnet restore
+      run: dotnet restore PriceFeed.sln
 
     - name: Build
-      run: dotnet build --configuration Release --no-restore
+      run: dotnet build PriceFeed.sln --configuration Release --no-restore
 
     - name: Verify environment
       run: |
