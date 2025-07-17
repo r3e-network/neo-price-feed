@@ -37,20 +37,20 @@ For detailed information, see:
 
 ## 🚀 Live Deployment Status
 
-**✅ ACTIVE ON NEO N3 TESTNET**
+**⚠️ DEPLOYED BUT NOT INITIALIZED ON NEO N3 TESTNET**
 
 - **Contract Hash**: `0xc14ffc3f28363fe59645873b28ed3ed8ccb774cc`
 - **Network**: Neo N3 TestNet
-- **Status**: 🟢 **OPERATIONAL** - Receiving price updates every 15 seconds during 5-minute execution windows
+- **Status**: 🟡 **NEEDS INITIALIZATION** - Contract deployed but not yet initialized
 - **TEE Account**: `NiNmXL8FjEUEs1nfX9uHFBNaenxDHJtmuB`
-- **Latest Activity**: Processing 19+ cryptocurrency prices per batch
+- **Next Step**: Run initialization commands below
 
-📊 **Live Monitoring**:
-- [Contract Explorer](https://testnet.explorer.onegate.space/contract/0xc14ffc3f28363fe59645873b28ed3ed8ccb774cc)
+📊 **Monitoring**:
+- Contract Hash: `0xc14ffc3f28363fe59645873b28ed3ed8ccb774cc` (verified on-chain)
 - [GitHub Actions Status](https://github.com/r3e-network/neo-price-feed/actions)
 - [Price Feed Workflow](https://github.com/r3e-network/neo-price-feed/actions/workflows/price-feed.yml)
 
-🎯 **Production Ready**: The price oracle is automatically updating with data from multiple sources including CoinGecko, Kraken, and other accessible APIs.
+⚠️ **Action Required**: The contract is deployed but needs to be initialized before it can receive price updates.
 
 ## Supported Cryptocurrencies
 
@@ -72,7 +72,7 @@ The price oracle currently tracks **19+ major cryptocurrencies** including:
 
 ## Contract Management
 
-✅ **Contract is initialized and operational.** For contract management operations:
+⚠️ **Contract needs initialization.** Follow these steps to activate:
 
 ```bash
 # Navigate to the ContractDeployer
