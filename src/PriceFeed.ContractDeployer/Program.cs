@@ -70,7 +70,7 @@ namespace PriceFeed.ContractDeployer
             Console.WriteLine("  dotnet run full          - Full deployment and setup");
         }
 
-        static async Task<string> DeployContract()
+        static Task<string> DeployContract()
         {
             try
             {
@@ -89,7 +89,7 @@ namespace PriceFeed.ContractDeployer
                 Console.WriteLine("\n⚠️  Contract deployment requires neo-cli or Neo wallet");
                 Console.WriteLine("   The contract is already deployed at: " + KNOWN_CONTRACT_HASH);
 
-                return KNOWN_CONTRACT_HASH;
+                return Task.FromResult(KNOWN_CONTRACT_HASH);
             }
             catch (Exception ex)
             {
