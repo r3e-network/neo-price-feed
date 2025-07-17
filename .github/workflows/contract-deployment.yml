@@ -52,7 +52,7 @@ jobs:
       run: |
         echo "Action: ${{ inputs.action }}"
         echo "Environment: ${{ inputs.environment }}"
-        echo "Contract Hash: ${{ secrets.CONTRACT_SCRIPT_HASH }}"
+        echo "Contract Hash: ${{ secrets.ORACLE_CONTRACT_HASH }}"
 
     - name: Execute contract operation
       run: |
@@ -63,16 +63,16 @@ jobs:
         DOTNET_ENVIRONMENT: ${{ inputs.environment == 'mainnet' && 'Production' || 'Development' }}
         
         # Neo RPC endpoints
-        NEO_RPC_ENDPOINT: ${{ inputs.environment == 'mainnet' && secrets.NEO_RPC_ENDPOINT_MAINNET || secrets.NEO_RPC_ENDPOINT || 'http://seed1t5.neo.org:20332' }}
+        NEO_RPC_URL: ${{ inputs.environment == 'mainnet' && secrets.NEO_RPC_ENDPOINT_MAINNET || secrets.NEO_RPC_URL || 'http://seed1t5.neo.org:20332' }}
         
         # Contract configuration
-        CONTRACT_SCRIPT_HASH: ${{ secrets.CONTRACT_SCRIPT_HASH }}
+        ORACLE_CONTRACT_HASH: ${{ secrets.ORACLE_CONTRACT_HASH }}
         
         # Account configuration
         MASTER_ACCOUNT_ADDRESS: ${{ secrets.MASTER_ACCOUNT_ADDRESS }}
         MASTER_ACCOUNT_PRIVATE_KEY: ${{ secrets.MASTER_ACCOUNT_PRIVATE_KEY }}
-        TEE_ACCOUNT_ADDRESS: ${{ secrets.TEE_ACCOUNT_ADDRESS }}
-        TEE_ACCOUNT_PRIVATE_KEY: ${{ secrets.TEE_ACCOUNT_PRIVATE_KEY }}
+        TEE_ACCOUNT_ADDRESS: ${{ secrets.NEO_TEE_ACCOUNT_ADDRESS }}
+        TEE_ACCOUNT_PRIVATE_KEY: ${{ secrets.NEO_TEE_ACCOUNT_PRIVATE_KEY }}
 
     - name: Generate summary
       if: always()

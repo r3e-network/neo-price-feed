@@ -102,7 +102,7 @@ jobs:
             --single-run
         else
           echo "Docker image not available. Please run the Build and Publish workflow first."
-          echo "To build the image, run: gh workflow run 'Build and Publish'"
+          echo "To build the image, run: gh workflow run build-and-publish.yml"
           exit 1
         fi
       timeout-minutes: 30

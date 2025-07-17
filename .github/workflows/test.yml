@@ -23,7 +23,7 @@ jobs:
         dotnet-version: ${{ env.DOTNET_VERSION }}
 
     - name: Cache dependencies
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: ~/.nuget/packages
         key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj') }}
@@ -38,8 +38,14 @@ jobs:
 
     - name: Run tests with timeout protection
       run: |
-        # Use custom script to run tests with strict timeout
-        ./scripts/test-with-timeout.sh
+        dotnet test PriceFeed.CI.sln \
+          --configuration Release \
+          --no-build \
+          --verbosity normal \
+          --collect:"XPlat Code Coverage" \
+          --blame-hang-timeout 3m \
+          --filter "Category!=SlowTest" \
+          --blame-hang-dump-type full
       timeout-minutes: 8
 
     - name: Upload test results
