@@ -15,10 +15,10 @@ namespace PriceFeed.Contracts
     /// with dual-signature verification for TEE authentication and transaction fees
     /// </summary>
     [DisplayName("PriceFeed.Oracle")]
-    [ManifestExtra("Author", "NeoBurger")]
-    [ManifestExtra("Email", "contact@neoburger.io")]
-    [ManifestExtra("Description", "Production-ready Price Oracle Contract with Dual-Signature Verification")]
-    [ManifestExtra("Version", "1.1.0")]
+    [ManifestExtra("Author", "R3E Network")]
+    [ManifestExtra("Email", "contact@r3e.network")]
+    [ManifestExtra("Description", "Production-ready Price Oracle Contract with Dual-Signature Verification by R3E Community")]
+    [ManifestExtra("Version", "1.2.0")]
     [ContractPermission("*", "onNEP17Payment")]
     public class PriceOracleContract : SmartContract
     {
