@@ -27,7 +27,7 @@ public static class CITestHelper
             {
                 Skip = "Integration tests are skipped in CI environment";
             }
-            
+
             // Also set the timeout
             Timeout = 30000;
         }

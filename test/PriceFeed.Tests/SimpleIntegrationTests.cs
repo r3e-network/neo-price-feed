@@ -30,7 +30,7 @@ public class SimpleIntegrationTests : IDisposable
     {
         _output = output;
     }
-    
+
     public void Dispose()
     {
         // Cleanup if needed
@@ -459,7 +459,7 @@ public class MockBatchProcessingService : IBatchProcessingService
         {
             BatchId = batch.BatchId,
             Status = BatchStatus.Confirmed,
-            TransactionHash = "0x" + Guid.NewGuid().ToString("N")[..40],
+            TransactionHash = "0x" + Guid.NewGuid().ToString("N"),
             Timestamp = DateTime.UtcNow,
             ProcessedCount = batch.Prices.Count,
             TotalCount = batch.Prices.Count
