@@ -114,12 +114,12 @@ try
 
     // Check if we should skip health checks
     bool skipHealthChecks = commandLineArgs.Contains("--skip-health-checks");
-    
+
     // Check for continuous execution mode
     bool continuousMode = commandLineArgs.Contains("--continuous");
     int executionDurationMinutes = 5; // Default 5 minutes
     int updateIntervalSeconds = 15; // Default 15 seconds
-    
+
     // Parse execution duration
     for (int i = 0; i < commandLineArgs.Length - 1; i++)
     {
@@ -377,22 +377,22 @@ try
 
     // Run the job
     var job = host.Services.GetRequiredService<PriceFeedJob>();
-    
+
     if (continuousMode)
     {
-        Log.Information("Starting continuous execution for {Duration} minutes with {Interval} second intervals", 
+        Log.Information("Starting continuous execution for {Duration} minutes with {Interval} second intervals",
             executionDurationMinutes, updateIntervalSeconds);
-        
+
         var endTime = DateTime.UtcNow.AddMinutes(executionDurationMinutes);
         var iterationCount = 0;
-        
+
         while (DateTime.UtcNow < endTime)
         {
             iterationCount++;
             var iterationStart = DateTime.UtcNow;
-            
+
             Log.Information("Starting iteration {Iteration} at {Time}", iterationCount, iterationStart);
-            
+
             try
             {
                 await job.RunAsync(skipHealthChecks);
@@ -401,23 +401,23 @@ try
             {
                 Log.Error(ex, "Error in iteration {Iteration}, continuing...", iterationCount);
             }
-            
+
             var processingTime = DateTime.UtcNow - iterationStart;
             var remainingDelay = TimeSpan.FromSeconds(updateIntervalSeconds) - processingTime;
-            
+
             if (remainingDelay > TimeSpan.Zero && DateTime.UtcNow < endTime)
             {
-                Log.Information("Iteration {Iteration} completed in {Time}s, waiting {Delay}s for next iteration", 
+                Log.Information("Iteration {Iteration} completed in {Time}s, waiting {Delay}s for next iteration",
                     iterationCount, processingTime.TotalSeconds, remainingDelay.TotalSeconds);
                 await Task.Delay(remainingDelay);
             }
             else if (processingTime > TimeSpan.FromSeconds(updateIntervalSeconds))
             {
-                Log.Warning("Iteration {Iteration} took {Time}s, which exceeds the interval of {Interval}s", 
+                Log.Warning("Iteration {Iteration} took {Time}s, which exceeds the interval of {Interval}s",
                     iterationCount, processingTime.TotalSeconds, updateIntervalSeconds);
             }
         }
-        
+
         Log.Information("Continuous execution completed after {Count} iterations", iterationCount);
     }
     else
