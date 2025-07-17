@@ -2,9 +2,8 @@ name: Run Price Feed Service
 
 on:
   schedule:
-    # Run every minute (minimum GitHub Actions interval)
-    # Note: 30 seconds is not possible with GitHub Actions cron
-    - cron: '* * * * *'
+    # Run every 10 minutes to keep price feed data fresh
+    - cron: '*/10 * * * *'
   workflow_dispatch:
     inputs:
       environment:

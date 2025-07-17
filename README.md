@@ -41,7 +41,7 @@ For detailed information, see:
 
 - **Contract Hash**: `0xc14ffc3f28363fe59645873b28ed3ed8ccb774cc`
 - **Network**: Neo N3 TestNet
-- **Status**: 🟢 **OPERATIONAL** - Receiving price updates every 4 hours
+- **Status**: 🟢 **OPERATIONAL** - Receiving price updates every 10 minutes
 - **TEE Account**: `NiNmXL8FjEUEs1nfX9uHFBNaenxDHJtmuB`
 - **Latest Activity**: Processing 19+ cryptocurrency prices per batch
 
@@ -364,28 +364,22 @@ For detailed information about the smart contract, see the [contract documentati
 The price oracle operates with **full automation** using GitHub Actions as the Trusted Execution Environment:
 
 **🔄 Active Workflows:**
-- **Price Feed Service**: Runs every minute automatically (`* * * * *`)
+- **Price Feed Service**: Runs every 10 minutes automatically (`*/10 * * * *`)
 - **Continuous Integration**: Tests on every push/PR  
 - **Docker Build & Publish**: Builds container images for deployment
 - **Contract Operations**: Manual deployment and management tools
 
 ### Current Schedule
 ```
-Every minute (maximum frequency supported by GitHub Actions)
-Note: 30 seconds was requested but GitHub Actions minimum interval is 1 minute
+Every 10 minutes (00:00, 00:10, 00:20, 00:30, 00:40, 00:50, etc.)
 ```
 
-⚠️ **High Frequency Warning**: Running every minute will:
-- Consume GitHub Actions minutes very quickly (~43,800 minutes/month)
-- May hit API rate limits on data sources
-- Generate significant transaction fees on Neo network
-- Consider if this frequency is actually needed for your use case
-
-💡 **Alternative for Sub-Minute Updates**: For true 30-second intervals, consider:
-- Self-hosted runners with custom scheduling
-- Dedicated server deployment with cron jobs
-- Cloud functions with timer triggers
-- Docker containers with internal scheduling
+✅ **Balanced Schedule Benefits**:
+- Provides frequent price updates (144 times per day)
+- Reasonable GitHub Actions usage (~4,320 minutes/month)
+- Stays within API rate limits for most data sources
+- Cost-effective Neo network transaction fees
+- Good balance between freshness and resource consumption
 
 ### Workflow Architecture
 
@@ -399,10 +393,10 @@ Note: 30 seconds was requested but GitHub Actions minimum interval is 1 minute
 
 **2. Price Feed Automation** (`.github/workflows/price-feed.yml`):
 ```yaml
-# Runs price oracle every minute (maximum GitHub Actions frequency)
+# Runs price oracle every 10 minutes for balanced frequency
 on:
   schedule:
-    - cron: '* * * * *'    # Every minute (30s not supported)
+    - cron: '*/10 * * * *'  # Every 10 minutes
   workflow_dispatch:       # Manual trigger available
 
 jobs:
