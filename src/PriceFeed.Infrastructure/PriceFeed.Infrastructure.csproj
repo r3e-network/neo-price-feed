@@ -8,6 +8,9 @@
     <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="9.0.6" />
     <PackageReference Include="Microsoft.Extensions.Diagnostics.HealthChecks.Abstractions" Version="9.0.6" />
     <PackageReference Include="Microsoft.Extensions.Http" Version="9.0.4" />
+    <PackageReference Include="Neo" Version="3.8.1" />
+    <PackageReference Include="Neo.Network.RPC.RpcClient" Version="3.8.1" />
+    <PackageReference Include="Neo.VM" Version="3.8.1" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
     <PackageReference Include="OpenTelemetry.Exporter.Console" Version="1.12.0" />
     <PackageReference Include="OpenTelemetry.Extensions.Hosting" Version="1.12.0" />

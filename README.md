@@ -273,13 +273,35 @@ Alternatively, you can use the `appsettings.json` file for local development:
     "TimeoutSeconds": 30
   },
   "BatchProcessing": {
-    "RpcEndpoint": "http://localhost:10332",
-    "ContractScriptHash": "MUST_BE_SET_TO_YOUR_DEPLOYED_CONTRACT_HASH",
-    "WalletWif": "MUST_BE_SET_VIA_ENVIRONMENT_VARIABLE",
-    "MaxBatchSize": 50
+    "RpcEndpoint": "https://mainnet.your-node:10332",
+    "ContractScriptHash": "0xyour_contract_hash",
+    "TeeAccountAddress": "__FROM_ENVIRONMENT__",
+    "TeeAccountPrivateKey": "__FROM_ENVIRONMENT__",
+    "MasterAccountAddress": "__FROM_ENVIRONMENT__",
+    "MasterAccountPrivateKey": "__FROM_ENVIRONMENT__",
+    "MaxBatchSize": 50,
+    "CheckAndTransferTeeAssets": true
   }
 }
 ```
+
+The price feed now requires dual signatures on every transaction:
+
+- TEE account proves execution inside the trusted environment.
+- Master account funds network fees; keep it funded with GAS.
+
+Provide credentials via environment variables:
+
+```
+TEE_ACCOUNT_ADDRESS
+TEE_ACCOUNT_PRIVATE_KEY
+MASTER_ACCOUNT_ADDRESS
+MASTER_ACCOUNT_PRIVATE_KEY
+NEO_RPC_ENDPOINT
+CONTRACT_SCRIPT_HASH
+```
+
+Endpoints must be HTTPS in production (unless using localhost for local dev). The TEE account should stay unfunded; any NEP-17 tokens received are automatically swept to the Master account when `CheckAndTransferTeeAssets` is true.
 
 ### Running the Application
 

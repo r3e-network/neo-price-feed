@@ -329,6 +329,7 @@ try
 
             // Register services
             services.AddTransient<IPriceAggregationService, PriceAggregationService>();
+            services.AddSingleton<INeoRpcClient, NeoRpcClient>();
 
             // Register batch processing service
             services.AddTransient<IBatchProcessingService, BatchProcessingService>();

@@ -1,341 +1,227 @@
 using System;
 using System.Collections.Generic;
-using System.Net;
-using System.Net.Http;
-using System.Threading;
+using System.Security.Cryptography;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Moq;
-using Moq.Protected;
-using Newtonsoft.Json;
+using Neo;
+using Neo.Network.P2P.Payloads;
+using Neo.Network.RPC.Models;
+using Neo.SmartContract;
+using Neo.SmartContract.Native;
+using Neo.Wallets;
 using PriceFeed.Core.Interfaces;
 using PriceFeed.Core.Models;
 using PriceFeed.Core.Options;
 using PriceFeed.Infrastructure.Services;
 using Xunit;
 
-namespace PriceFeed.Tests
+namespace PriceFeed.Tests;
+
+public class BatchProcessingServiceTests
 {
-    public class BatchProcessingServiceTests
+    private readonly Mock<ILogger<BatchProcessingService>> _loggerMock = new();
+    private readonly Mock<IOptions<BatchProcessingOptions>> _optionsMock = new();
+    private readonly Mock<IAttestationService> _attestationServiceMock = new();
+    private readonly Mock<INeoRpcClient> _rpcClientMock = new();
+    private readonly string _teeWif;
+    private readonly string _masterWif;
+    private readonly string _teeAddress;
+    private readonly string _masterAddress;
+
+    public BatchProcessingServiceTests()
     {
-        private readonly Mock<ILogger<BatchProcessingService>> _loggerMock;
-        private readonly Mock<IOptions<BatchProcessingOptions>> _optionsMock;
-        private readonly Mock<HttpMessageHandler> _httpMessageHandlerMock;
-        private readonly HttpClient _httpClient;
-        private readonly Mock<IHttpClientFactory> _httpClientFactoryMock;
-        private readonly Mock<IAttestationService> _attestationServiceMock;
+        var teeKey = CreateKeyPair();
+        var masterKey = CreateKeyPair();
 
-        public BatchProcessingServiceTests()
+        _teeWif = teeKey.Export();
+        _masterWif = masterKey.Export();
+        _teeAddress = Contract.CreateSignatureContract(teeKey.PublicKey).ScriptHash.ToAddress(ProtocolSettings.Default.AddressVersion);
+        _masterAddress = Contract.CreateSignatureContract(masterKey.PublicKey).ScriptHash.ToAddress(ProtocolSettings.Default.AddressVersion);
+
+        _optionsMock.Setup(o => o.Value).Returns(new BatchProcessingOptions
         {
-            _loggerMock = new Mock<ILogger<BatchProcessingService>>();
-            _optionsMock = new Mock<IOptions<BatchProcessingOptions>>();
-            _httpMessageHandlerMock = new Mock<HttpMessageHandler>();
-            _httpClient = new HttpClient(_httpMessageHandlerMock.Object);
+            RpcEndpoint = "http://localhost:10332",
+            ContractScriptHash = "0xc14ffc3f28363fe59645873b28ed3ed8ccb774cc",
+            TeeAccountAddress = _teeAddress,
+            TeeAccountPrivateKey = _teeWif,
+            MasterAccountAddress = _masterAddress,
+            MasterAccountPrivateKey = _masterWif,
+            MaxBatchSize = 50,
+            CheckAndTransferTeeAssets = false
+        });
 
-            _httpClientFactoryMock = new Mock<IHttpClientFactory>();
-            _httpClientFactoryMock.Setup(f => f.CreateClient("Neo")).Returns(_httpClient);
+        _rpcClientMock.SetupGet(r => r.ProtocolSettings).Returns(ProtocolSettings.Default);
+        _rpcClientMock.Setup(r => r.GetRawTransactionAsync(It.IsAny<string>()))
+            .ReturnsAsync(new RpcTransaction { Confirmations = 1 });
 
-            _attestationServiceMock = new Mock<IAttestationService>();
+        _attestationServiceMock
+            .Setup(a => a.CreatePriceFeedAttestationAsync(
+                It.IsAny<PriceBatch>(),
+                It.IsAny<string>(),
+                It.IsAny<string>(),
+                It.IsAny<string>(),
+                It.IsAny<string>(),
+                It.IsAny<string>(),
+                It.IsAny<string>()))
+            .ReturnsAsync(true);
+    }
 
-            _optionsMock.Setup(o => o.Value).Returns(new BatchProcessingOptions
-            {
-                RpcEndpoint = "https://example.com/rpc",
-                ContractScriptHash = "0x1234567890abcdef",
-                TeeAccountAddress = "NeoAddress123",
-                TeeAccountPrivateKey = "KxDgvEKzgSBPPfuVfw67oPQBSjidEiqTHURKSDL1R7yGaGYAeYnr",
-                MasterAccountAddress = "NeoAddress456",
-                MasterAccountPrivateKey = "KxDgvEKzgSBPPfuVfw67oPQBSjidEiqTHURKSDL1R7yGaGYAeYnr",
-                MaxBatchSize = 50
-            });
-        }
+    [Fact]
+    public async Task ProcessBatchAsync_WithValidBatch_ShouldReturnTrue()
+    {
+        _rpcClientMock.Setup(r => r.SubmitScriptAsync(
+                It.IsAny<ReadOnlyMemory<byte>>(),
+                It.IsAny<Signer[]>(),
+                It.IsAny<KeyPair[]>()))
+            .ReturnsAsync(UInt256.Zero);
 
-        [Fact]
-        public async Task ProcessBatchAsync_WithValidBatch_ShouldReturnTrue()
+        var service = CreateService();
+        var batch = CreateBatch(1);
+
+        var result = await service.ProcessBatchAsync(batch);
+
+        Assert.True(result);
+        _rpcClientMock.Verify(r => r.SubmitScriptAsync(It.IsAny<ReadOnlyMemory<byte>>(), It.IsAny<Signer[]>(), It.IsAny<KeyPair[]>()), Times.Once);
+        _attestationServiceMock.Verify(a => a.CreatePriceFeedAttestationAsync(
+            It.IsAny<PriceBatch>(),
+            It.IsAny<string>(),
+            It.IsAny<string>(),
+            It.IsAny<string>(),
+            It.IsAny<string>(),
+            It.IsAny<string>(),
+            It.IsAny<string>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task ProcessBatchAsync_WithLargeBatch_ShouldSplitIntoSubBatches()
+    {
+        _rpcClientMock.Setup(r => r.SubmitScriptAsync(
+                It.IsAny<ReadOnlyMemory<byte>>(),
+                It.IsAny<Signer[]>(),
+                It.IsAny<KeyPair[]>()))
+            .ReturnsAsync(UInt256.Zero);
+
+        var service = CreateService();
+        var batch = CreateBatch(100);
+
+        var result = await service.ProcessBatchAsync(batch);
+
+        Assert.True(result);
+        _rpcClientMock.Verify(r => r.SubmitScriptAsync(
+            It.IsAny<ReadOnlyMemory<byte>>(),
+            It.IsAny<Signer[]>(),
+            It.IsAny<KeyPair[]>()), Times.Exactly(2));
+    }
+
+    [Fact]
+    public async Task ProcessBatchAsync_WhenSubmissionFails_ShouldReturnFalse()
+    {
+        _rpcClientMock.Setup(r => r.SubmitScriptAsync(
+                It.IsAny<ReadOnlyMemory<byte>>(),
+                It.IsAny<Signer[]>(),
+                It.IsAny<KeyPair[]>()))
+            .ThrowsAsync(new InvalidOperationException("rpc failure"));
+
+        var service = CreateService();
+        var batch = CreateBatch(1);
+
+        var result = await service.ProcessBatchAsync(batch);
+
+        Assert.False(result);
+    }
+
+    [Fact]
+    public async Task ProcessBatchAsync_WithEmptyBatch_ShouldThrowException()
+    {
+        var service = CreateService();
+        var batch = new PriceBatch { Prices = new List<AggregatedPriceData>() };
+
+        await Assert.ThrowsAsync<ArgumentException>(() => service.ProcessBatchAsync(batch));
+        _rpcClientMock.Verify(r => r.SubmitScriptAsync(
+            It.IsAny<ReadOnlyMemory<byte>>(),
+            It.IsAny<Signer[]>(),
+            It.IsAny<KeyPair[]>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task ProcessBatchAsync_WithAssetSweep_ShouldTransferFirst()
+    {
+        _optionsMock.Setup(o => o.Value).Returns(new BatchProcessingOptions
         {
-            // Arrange
-            var batch = new PriceBatch
+            RpcEndpoint = "http://localhost:10332",
+            ContractScriptHash = "0xc14ffc3f28363fe59645873b28ed3ed8ccb774cc",
+            TeeAccountAddress = _teeAddress,
+            TeeAccountPrivateKey = _teeWif,
+            MasterAccountAddress = _masterAddress,
+            MasterAccountPrivateKey = _masterWif,
+            MaxBatchSize = 50,
+            CheckAndTransferTeeAssets = true
+        });
+
+        _rpcClientMock.Setup(r => r.SubmitScriptAsync(
+                It.IsAny<ReadOnlyMemory<byte>>(),
+                It.IsAny<Signer[]>(),
+                It.IsAny<KeyPair[]>()))
+            .ReturnsAsync(UInt256.Zero);
+
+        _rpcClientMock.Setup(r => r.GetNep17BalancesAsync(It.IsAny<UInt160>()))
+            .ReturnsAsync(new RpcNep17Balances
             {
-                Prices = new List<AggregatedPriceData>
+                UserScriptHash = UInt160.Zero,
+                Balances = new List<RpcNep17Balance>
                 {
-                    new AggregatedPrice
+                    new RpcNep17Balance
                     {
-                        Symbol = "BTCUSDT",
-                        Price = 50000,
-                        Timestamp = DateTime.UtcNow,
-                        ConfidenceScore = 90
+                        AssetHash = NativeContract.GAS.Hash,
+                        Amount = new System.Numerics.BigInteger(2_00000000),
+                        LastUpdatedBlock = 0
                     }
                 }
-            };
-
-            // Mock HTTP response
-            // The response will be always successfull no matter what the input is.
-            var responseContent = JsonConvert.SerializeObject(new
-            {
-                jsonrpc = "2.0",
-                id = 1,
-                result = new
-                {
-                    hash = "0xtransactionhash123",
-                    script = "script",
-                    state = "HALT",
-                    gasconsumed = "1000",
-                    exception = (string?)null
-                }
             });
 
-            _httpMessageHandlerMock
-                .Protected()
-                .Setup<Task<HttpResponseMessage>>(
-                    "SendAsync",
-                    ItExpr.IsAny<HttpRequestMessage>(),
-                    ItExpr.IsAny<CancellationToken>())
-                .ReturnsAsync(new HttpResponseMessage
-                {
-                    StatusCode = HttpStatusCode.OK,
-                    Content = new StringContent(responseContent)
-                });
+        var service = CreateService();
+        var batch = CreateBatch(1);
 
-            var service = new BatchProcessingService(_loggerMock.Object, _optionsMock.Object, _httpClientFactoryMock.Object, _attestationServiceMock.Object);
+        var result = await service.ProcessBatchAsync(batch);
 
-            // Act
-            var result = await service.ProcessBatchAsync(batch);
+        Assert.True(result);
+        _rpcClientMock.Verify(r => r.GetNep17BalancesAsync(It.IsAny<UInt160>()), Times.Once);
+        _rpcClientMock.Verify(r => r.SubmitScriptAsync(
+            It.IsAny<ReadOnlyMemory<byte>>(),
+            It.IsAny<Signer[]>(),
+            It.IsAny<KeyPair[]>()), Times.AtLeast(2));
+    }
 
-            // Assert
-            Assert.True(result);
-        }
+    private BatchProcessingService CreateService() =>
+        new(_loggerMock.Object, _optionsMock.Object, _attestationServiceMock.Object, _rpcClientMock.Object);
 
-        [Fact]
-        public async Task ProcessBatchAsync_WithHttpError_ShouldReturnFalse()
+    private static KeyPair CreateKeyPair()
+    {
+        var privateKey = new byte[32];
+        RandomNumberGenerator.Fill(privateKey);
+        return new KeyPair(privateKey);
+    }
+
+    private static PriceBatch CreateBatch(int itemCount)
+    {
+        var prices = new List<AggregatedPriceData>();
+        for (int i = 0; i < itemCount; i++)
         {
-            // Arrange
-            var batch = new PriceBatch
+            prices.Add(new AggregatedPrice
             {
-                Prices = new List<AggregatedPriceData>
-                {
-                    new AggregatedPrice
-                    {
-                        Symbol = "BTCUSDT",
-                        Price = 50000,
-                        Timestamp = DateTime.UtcNow,
-                        ConfidenceScore = 90
-                    }
-                }
-            };
-
-            _httpMessageHandlerMock
-                .Protected()
-                .Setup<Task<HttpResponseMessage>>(
-                    "SendAsync",
-                    ItExpr.IsAny<HttpRequestMessage>(),
-                    ItExpr.IsAny<CancellationToken>())
-                .ReturnsAsync(new HttpResponseMessage
-                {
-                    StatusCode = HttpStatusCode.InternalServerError
-                });
-
-            var service = new BatchProcessingService(_loggerMock.Object, _optionsMock.Object, _httpClientFactoryMock.Object, _attestationServiceMock.Object);
-
-            // Act
-            var result = await service.ProcessBatchAsync(batch);
-
-            // Assert
-            Assert.False(result);
-        }
-
-        [Fact]
-        public async Task ProcessBatchAsync_WithLargeBatch_ShouldSplitIntoSubBatches()
-        {
-            // Arrange
-            var prices = new List<AggregatedPriceData>();
-            for (int i = 0; i < 100; i++)
-            {
-                prices.Add(new AggregatedPrice
-                {
-                    Symbol = $"SYMBOL{i}",
-                    Price = 1000 + i,
-                    Timestamp = DateTime.UtcNow,
-                    ConfidenceScore = 90
-                });
-            }
-
-            var batch = new PriceBatch
-            {
-                Prices = prices
-            };
-
-            // Mock HTTP response
-            var responseContent = JsonConvert.SerializeObject(new
-            {
-                jsonrpc = "2.0",
-                id = 1,
-                result = new
-                {
-                    hash = "0xtransactionhash123",
-                    script = "script",
-                    state = "HALT",
-                    gasconsumed = "1000",
-                    exception = (string?)null
-                }
+                Symbol = $"SYMBOL{i}",
+                Price = 1000 + i,
+                Timestamp = DateTime.UtcNow,
+                ConfidenceScore = 90
             });
-
-            _httpMessageHandlerMock
-                .Protected()
-                .Setup<Task<HttpResponseMessage>>(
-                    "SendAsync",
-                    ItExpr.IsAny<HttpRequestMessage>(),
-                    ItExpr.IsAny<CancellationToken>())
-                .ReturnsAsync(new HttpResponseMessage
-                {
-                    StatusCode = HttpStatusCode.OK,
-                    Content = new StringContent(responseContent)
-                });
-
-            var service = new BatchProcessingService(_loggerMock.Object, _optionsMock.Object, _httpClientFactoryMock.Object, _attestationServiceMock.Object);
-
-            // Act
-            var result = await service.ProcessBatchAsync(batch);
-
-            // Assert
-            Assert.True(result);
-
-            // Verify that SendAsync was called multiple times (for each sub-batch)
-            _httpMessageHandlerMock
-                .Protected()
-                .Verify(
-                    "SendAsync",
-                    Times.AtLeast(2), // At least 2 sub-batches (100 items / 50 max batch size)
-                    ItExpr.IsAny<HttpRequestMessage>(),
-                    ItExpr.IsAny<CancellationToken>());
         }
 
-        [Fact]
-        public async Task ProcessBatchAsync_WithRpcErrorResponse_ShouldReturnFalse()
+        return new PriceBatch
         {
-            // Arrange
-            var batch = new PriceBatch
-            {
-                Prices = new List<AggregatedPriceData>
-                {
-                    new AggregatedPrice
-                    {
-                        Symbol = "BTCUSDT",
-                        Price = 50000,
-                        Timestamp = DateTime.UtcNow,
-                        ConfidenceScore = 90
-                    }
-                }
-            };
-
-            // Mock HTTP response with RPC error
-            var responseContent = JsonConvert.SerializeObject(new
-            {
-                jsonrpc = "2.0",
-                id = 1,
-                error = new
-                {
-                    code = -32602,
-                    message = "Invalid params"
-                }
-            });
-
-            _httpMessageHandlerMock
-                .Protected()
-                .Setup<Task<HttpResponseMessage>>(
-                    "SendAsync",
-                    ItExpr.IsAny<HttpRequestMessage>(),
-                    ItExpr.IsAny<CancellationToken>())
-                .ReturnsAsync(new HttpResponseMessage
-                {
-                    StatusCode = HttpStatusCode.OK,
-                    Content = new StringContent(responseContent)
-                });
-
-            var service = new BatchProcessingService(_loggerMock.Object, _optionsMock.Object, _httpClientFactoryMock.Object, _attestationServiceMock.Object);
-
-            // Act
-            var result = await service.ProcessBatchAsync(batch);
-
-            // Assert
-            Assert.False(result);
-        }
-
-        [Fact]
-        public async Task ProcessBatchAsync_WithTransactionException_ShouldReturnFalse()
-        {
-            // Arrange
-            var batch = new PriceBatch
-            {
-                Prices = new List<AggregatedPriceData>
-                {
-                    new AggregatedPrice
-                    {
-                        Symbol = "BTCUSDT",
-                        Price = 50000,
-                        Timestamp = DateTime.UtcNow,
-                        ConfidenceScore = 90
-                    }
-                }
-            };
-
-            // Mock HTTP response with transaction exception
-            var responseContent = JsonConvert.SerializeObject(new
-            {
-                jsonrpc = "2.0",
-                id = 1,
-                result = new
-                {
-                    hash = "0xtransactionhash123",
-                    script = "script",
-                    state = "FAULT", // Transaction failed
-                    gasconsumed = "1000",
-                    exception = "Contract execution failed: Insufficient funds"
-                }
-            });
-
-            _httpMessageHandlerMock
-                .Protected()
-                .Setup<Task<HttpResponseMessage>>(
-                    "SendAsync",
-                    ItExpr.IsAny<HttpRequestMessage>(),
-                    ItExpr.IsAny<CancellationToken>())
-                .ReturnsAsync(new HttpResponseMessage
-                {
-                    StatusCode = HttpStatusCode.OK,
-                    Content = new StringContent(responseContent)
-                });
-
-            var service = new BatchProcessingService(_loggerMock.Object, _optionsMock.Object, _httpClientFactoryMock.Object, _attestationServiceMock.Object);
-
-            // Act
-            var result = await service.ProcessBatchAsync(batch);
-
-            // Assert
-            Assert.False(result);
-        }
-
-        [Fact]
-        public async Task ProcessBatchAsync_WithEmptyBatch_ShouldThrowException()
-        {
-            // Arrange
-            var batch = new PriceBatch
-            {
-                Prices = new List<AggregatedPriceData>()
-            };
-
-            var service = new BatchProcessingService(_loggerMock.Object, _optionsMock.Object, _httpClientFactoryMock.Object, _attestationServiceMock.Object);
-
-            // Act & Assert
-            await Assert.ThrowsAsync<ArgumentException>(async () => await service.ProcessBatchAsync(batch));
-
-            // Verify that SendAsync was not called
-            _httpMessageHandlerMock
-                .Protected()
-                .Verify(
-                    "SendAsync",
-                    Times.Never(),
-                    ItExpr.IsAny<HttpRequestMessage>(),
-                    ItExpr.IsAny<CancellationToken>());
-        }
+            BatchId = Guid.NewGuid(),
+            Prices = prices
+        };
     }
 }

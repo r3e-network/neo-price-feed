@@ -100,8 +100,14 @@ namespace PriceFeed.Console
                 {
                     // Add required services
                     services.AddHttpClient();
+                    services.AddHttpClient("Neo", client =>
+                    {
+                        client.BaseAddress = new Uri("https://localhost:10332");
+                        client.Timeout = TimeSpan.FromSeconds(30);
+                    });
                     services.AddMemoryCache();
                     services.AddScoped<IAttestationService, AttestationService>();
+                    services.AddSingleton<INeoRpcClient, NeoRpcClient>();
 
                     // Configure HTTP clients
                     services.AddHttpClient("CoinGecko", client =>

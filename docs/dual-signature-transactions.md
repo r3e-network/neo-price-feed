@@ -96,3 +96,9 @@ The dual-signature transaction system is implemented through several components:
 2. **BatchProcessingService**: Creates and signs transactions with both accounts
 3. **CheckAndTransferTeeAssetsAsync**: Transfers assets from the TEE account to the Master account
 4. **TEE Execution**: Configure and use both accounts for price feed updates
+
+## RPC Implementation Notes
+
+- Transactions are built with `ScriptBuilder` and submitted through the Neo RPC client with both signatures attached using `TransactionManagerFactory`.
+- Protocol settings are discovered dynamically from the configured RPC endpoint to ensure hashes and address version match the network.
+- NEP-17 balances on the TEE account are swept to the Master account before submitting batches when `CheckAndTransferTeeAssets` is enabled.

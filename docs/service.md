@@ -175,13 +175,25 @@ Alternatively, you can use the `appsettings.json` file for local development:
     "TimeoutSeconds": 30
   },
   "BatchProcessing": {
-    "RpcEndpoint": "http://localhost:10332",
-    "ContractScriptHash": "0xd2a4cff31913016155e38e474a2c06d08be276cf",
-    "WalletWif": "KxDgvEKzgSBPPfuVfw67oPQBSjidEiqTHURKSDL1R7yGaGYAeYnr",
-    "MaxBatchSize": 50
+    "RpcEndpoint": "https://mainnet.your-node:10332",
+    "ContractScriptHash": "0xyour_contract_hash",
+    "TeeAccountAddress": "__FROM_ENVIRONMENT__",
+    "TeeAccountPrivateKey": "__FROM_ENVIRONMENT__",
+    "MasterAccountAddress": "__FROM_ENVIRONMENT__",
+    "MasterAccountPrivateKey": "__FROM_ENVIRONMENT__",
+    "MaxBatchSize": 50,
+    "CheckAndTransferTeeAssets": true
   }
 }
 ```
+
+Provide credentials via environment variables to avoid committing secrets:
+
+- `TEE_ACCOUNT_ADDRESS` / `TEE_ACCOUNT_PRIVATE_KEY`
+- `MASTER_ACCOUNT_ADDRESS` / `MASTER_ACCOUNT_PRIVATE_KEY`
+- `NEO_RPC_ENDPOINT` / `CONTRACT_SCRIPT_HASH`
+
+Use HTTPS for non-local endpoints. Keep the TEE account unfunded; any NEP‑17 assets it receives are swept to the Master account when `CheckAndTransferTeeAssets` is enabled.
 
 ## TEE Execution Schedule
 

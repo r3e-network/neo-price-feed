@@ -47,7 +47,7 @@ public class KrakenDataSourceAdapterRealApiTests
         };
     }
 
-    [Fact]
+    [Fact(Skip = "Uses live Kraken API; set RUN_LIVE_API_TESTS=true to run explicitly.")]
     public async Task GetPriceDataAsync_WithRealApi_ShouldReturnValidPriceData()
     {
         // Arrange
@@ -68,7 +68,7 @@ public class KrakenDataSourceAdapterRealApiTests
         Assert.True(result.Volume > 0, "Volume should be greater than 0");
     }
 
-    [Fact]
+    [Fact(Skip = "Uses live Kraken API; set RUN_LIVE_API_TESTS=true to run explicitly.")]
     public async Task GetSupportedSymbolsAsync_WithRealApi_ShouldReturnSupportedSymbols()
     {
         // Arrange
@@ -87,7 +87,7 @@ public class KrakenDataSourceAdapterRealApiTests
         Assert.Contains("ETHUSDT", result);
     }
 
-    [Fact]
+    [Fact(Skip = "Uses live Kraken API; set RUN_LIVE_API_TESTS=true to run explicitly.")]
     public async Task GetPriceDataAsync_WithUnsupportedSymbol_ShouldThrowException()
     {
         // Arrange

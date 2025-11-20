@@ -23,9 +23,10 @@ public static class CITestHelper
     {
         public IntegrationFactAttribute()
         {
-            if (IsRunningInCI)
+            // Opt-in via RUN_INTEGRATION_TESTS=true; otherwise skip by default or in CI
+            if (Environment.GetEnvironmentVariable("RUN_INTEGRATION_TESTS") != "true" || IsRunningInCI)
             {
-                Skip = "Integration tests are skipped in CI environment";
+                Skip = "Integration tests are skipped by default. Set RUN_INTEGRATION_TESTS=true to run.";
             }
 
             // Also set the timeout

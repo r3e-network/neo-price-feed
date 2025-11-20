@@ -1,15 +1,12 @@
-using System.Net;
-using System.Net.Http;
-using System.Numerics;
-using System.Threading;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Moq;
-using Moq.Protected;
 using Neo;
 using Neo.Cryptography.ECC;
 using Neo.Network.P2P.Payloads;
+using Neo.Network.RPC.Models;
 using Neo.SmartContract;
 using Neo.Wallets;
 using PriceFeed.Core.Interfaces;
@@ -25,20 +22,26 @@ namespace PriceFeed.Tests;
 /// </summary>
 public class NeoIntegrationTests
 {
-    private readonly Mock<ILogger<BatchProcessingService>> _mockLogger;
-    private readonly Mock<IHttpClientFactory> _mockHttpClientFactory;
-    private readonly Mock<IAttestationService> _mockAttestationService;
+    private readonly Mock<ILogger<BatchProcessingService>> _mockLogger = new();
+    private readonly Mock<IAttestationService> _mockAttestationService = new();
+    private readonly Mock<INeoRpcClient> _rpcClientMock = new();
 
     public NeoIntegrationTests()
     {
-        _mockLogger = new Mock<ILogger<BatchProcessingService>>();
-        _mockHttpClientFactory = new Mock<IHttpClientFactory>();
-        _mockAttestationService = new Mock<IAttestationService>();
+        _rpcClientMock.SetupGet(r => r.ProtocolSettings).Returns(ProtocolSettings.Default);
+        _rpcClientMock.Setup(r => r.GetRawTransactionAsync(It.IsAny<string>()))
+            .ReturnsAsync(new RpcTransaction { Confirmations = 1 });
 
-        // Setup mock HTTP client
-        var mockHttpMessageHandler = new Mock<HttpMessageHandler>();
-        var httpClient = new HttpClient(mockHttpMessageHandler.Object);
-        _mockHttpClientFactory.Setup(f => f.CreateClient(It.IsAny<string>())).Returns(httpClient);
+        _mockAttestationService
+            .Setup(a => a.CreatePriceFeedAttestationAsync(
+                It.IsAny<PriceBatch>(),
+                It.IsAny<string>(),
+                It.IsAny<string>(),
+                It.IsAny<string>(),
+                It.IsAny<string>(),
+                It.IsAny<string>(),
+                It.IsAny<string>()))
+            .ReturnsAsync(true);
     }
 
     [Fact]
@@ -175,13 +178,12 @@ public class NeoIntegrationTests
     }
 
     [Fact]
-    public async Task ProcessBatch_WithValidCredentials_ShouldValidateCorrectly()
+    public async Task ProcessBatch_WithValidCredentials_ShouldSubmitTransaction()
     {
-        // Arrange
         var options = new BatchProcessingOptions
         {
             RpcEndpoint = "http://localhost:10332",
-            ContractScriptHash = "0x1234567890abcdef1234567890abcdef12345678",
+            ContractScriptHash = "0xc14ffc3f28363fe59645873b28ed3ed8ccb774cc",
             TeeAccountAddress = "NXV7ZhHiyM1aHXwpVsRZC6BwNFP7jghXAq",
             TeeAccountPrivateKey = GenerateTestWIF(),
             MasterAccountAddress = "NL5P8BBjpPuLpH5gZBxATrxDLqXxjHqmkr",
@@ -189,11 +191,17 @@ public class NeoIntegrationTests
             MaxBatchSize = 50
         };
 
+        _rpcClientMock.Setup(r => r.SubmitScriptAsync(
+                It.IsAny<ReadOnlyMemory<byte>>(),
+                It.IsAny<Signer[]>(),
+                It.IsAny<KeyPair[]>()))
+            .ReturnsAsync(UInt256.Zero);
+
         var service = new BatchProcessingService(
             _mockLogger.Object,
             Options.Create(options),
-            _mockHttpClientFactory.Object,
-            _mockAttestationService.Object
+            _mockAttestationService.Object,
+            _rpcClientMock.Object
         );
 
         var batch = new PriceBatch
@@ -201,23 +209,23 @@ public class NeoIntegrationTests
             BatchId = Guid.NewGuid(),
             Prices = new List<AggregatedPriceData>
             {
-                new AggregatedPriceData
+                new AggregatedPrice
                 {
                     Symbol = "BTCUSDT",
                     Price = 50000.00m,
                     Timestamp = DateTime.UtcNow,
-                    ConfidenceScore = 95,
-                    SourceData = new List<PriceData>()  // Empty list for test
+                    ConfidenceScore = 95
                 }
             }
         };
 
-        // Act & Assert
-        // This will fail when trying to process because the HTTP handler mock doesn't return a response
-        await Assert.ThrowsAsync<InvalidOperationException>(async () =>
-        {
-            await service.ProcessBatchAsync(batch);
-        });
+        var result = await service.ProcessBatchAsync(batch);
+
+        Assert.True(result);
+        _rpcClientMock.Verify(r => r.SubmitScriptAsync(
+            It.IsAny<ReadOnlyMemory<byte>>(),
+            It.IsAny<Signer[]>(),
+            It.IsAny<KeyPair[]>()), Times.Once);
     }
 
     private string GenerateTestWIF()
