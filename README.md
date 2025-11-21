@@ -362,6 +362,11 @@ dotnet test
 
 # Run tests with coverage
 dotnet test /p:CollectCoverage=true /p:CoverletOutputFormat=opencover
+
+# Opt-in to live/API/integration suites
+# (default is skipped; set env vars to run explicitly)
+RUN_LIVE_API_TESTS=true dotnet test       # live CoinGecko/Kraken API tests
+RUN_INTEGRATION_TESTS=true dotnet test    # integration tests
 ```
 
 ## Logging
