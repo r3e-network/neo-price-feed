@@ -13,7 +13,7 @@ import binascii
 
 # Configuration from environment variables
 RPC_ENDPOINT = os.getenv("NEO_RPC_ENDPOINT", "http://seed1t5.neo.org:20332")
-CONTRACT_HASH = os.getenv("CONTRACT_SCRIPT_HASH", "0xc14ffc3f28363fe59645873b28ed3ed8ccb774cc")
+CONTRACT_HASH = os.getenv("CONTRACT_SCRIPT_HASH", "0xYOUR_DEPLOYED_CONTRACT_HASH_HERE")
 OWNER_ADDRESS = os.getenv("MASTER_ACCOUNT_ADDRESS", "NTmHjwiadq4g3VHpJ5FQigQcD4fF5m8TyX")
 OWNER_WIF = os.getenv("MASTER_ACCOUNT_PRIVATE_KEY", "KzjaqMvqzF1uup6KrTKRxTgjcXE7PbKLRH84e6ckyXDt3fu7afUb")
 TEE_ADDRESS = os.getenv("TEE_ACCOUNT_ADDRESS", "NiNmXL8FjEUEs1nfX9uHFBNaenxDHJtmuB")
