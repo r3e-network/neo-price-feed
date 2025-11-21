@@ -55,11 +55,12 @@ jobs:
       run: dotnet test src/PriceFeed.R3E/PriceFeed.R3E.Tests/PriceFeed.R3E.Tests.csproj --configuration Release --no-build --verbosity normal --collect:"XPlat Code Coverage"
 
     - name: Upload coverage reports
-      uses: codecov/codecov-action@v3
+      uses: codecov/codecov-action@v4
       with:
         file: ./src/PriceFeed.R3E/PriceFeed.R3E.Tests/TestResults/**/coverage.cobertura.xml
         flags: r3e-contract
         name: r3e-contract-coverage
+        token: ${{ secrets.CODECOV_TOKEN }}
 
     - name: Verify contract compilation
       run: |

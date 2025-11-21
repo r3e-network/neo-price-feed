@@ -50,10 +50,11 @@ jobs:
       timeout-minutes: 8
       
     - name: Upload coverage reports
-      uses: codecov/codecov-action@v3
+      uses: codecov/codecov-action@v4
       with:
         files: ./test/PriceFeed.Tests/TestResults/*/coverage.cobertura.xml
         fail_ci_if_error: false
+        token: ${{ secrets.CODECOV_TOKEN }}
         
   code-quality:
     runs-on: ubuntu-latest
