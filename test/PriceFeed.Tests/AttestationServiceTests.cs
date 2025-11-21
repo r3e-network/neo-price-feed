@@ -45,12 +45,16 @@ namespace PriceFeed.Tests
             // Arrange
             var accountAddress = "NeoAddress123";
             var accountPublicKey = "PublicKey123";
+            var accountDir = Path.Combine(_testAttestationDir, "account");
 
             // Act
             var result = await _service.CreateAccountAttestationAsync(accountAddress, accountPublicKey);
 
             // Assert
             Assert.True(result);
+            Assert.True(Directory.Exists(accountDir));
+            var files = Directory.GetFiles(accountDir, "account_attestation_*");
+            Assert.NotEmpty(files);
         }
 
         [Fact]
@@ -152,6 +156,7 @@ namespace PriceFeed.Tests
             var repoOwner = "testowner";
             var repoName = "testrepo";
             var workflow = "testworkflow";
+            var priceDir = Path.Combine(_testAttestationDir, "price_feed");
 
             // Act
             var result = await _service.CreatePriceFeedAttestationAsync(
@@ -159,6 +164,9 @@ namespace PriceFeed.Tests
 
             // Assert
             Assert.True(result);
+            Assert.True(Directory.Exists(priceDir));
+            var files = Directory.GetFiles(priceDir, "attestation_*");
+            Assert.NotEmpty(files);
         }
 
         [Fact]
