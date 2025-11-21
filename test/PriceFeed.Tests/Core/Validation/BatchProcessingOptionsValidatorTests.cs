@@ -143,7 +143,7 @@ public class BatchProcessingOptionsValidatorTests
 
         var result = _validator.Validate("BatchProcessing", options);
 
-         Assert.True(result.Failed);
+        Assert.True(result.Failed);
         Assert.Contains("Max batch size should not exceed 100", result.FailureMessage);
     }
 
