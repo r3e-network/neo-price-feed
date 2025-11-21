@@ -152,7 +152,7 @@ A .NET console application that runs in a Trusted Execution Environment (TEE). T
 - Aggregates the data with confidence scoring
 - Uses a dual-signature system with TEE and Master accounts
 - Signs and submits transactions to the blockchain
-- Creates cryptographic attestations to prove execution within the TEE
+- Creates cryptographic attestations to prove execution within the TEE (includes run id/number/repo/workflow and transaction hash for auditability)
 - Maintains the same accounts across code updates for a consistent identity
 
 **Note**: This is not a web API service. It's designed to be triggered on a schedule to update price data.
@@ -383,6 +383,7 @@ Neo Express defaults to RPC port `50012` when created via `neoxp create`; set `N
 Notes for Neo Express script:
 - It resets `~/.neo-express/default.neo-express` and fast-forwards 200 blocks to mint GAS for `node1`
 - Deployment uses `node1`; contract price seeding requires dual signatures and may be skipped (tests will still do the RPC smoke check)
+- Seeding currently fails dual-signature checks (needs distinct oracle + TEE witnesses); RPC smoke still validates connectivity
 
 ### Smart Contract Build & Verification
 
