@@ -28,18 +28,27 @@ NEF="${ROOT_DIR}/src/PriceFeed.Contracts/bin/sc/PriceFeed.Oracle.nef"
 MANIFEST="${ROOT_DIR}/src/PriceFeed.Contracts/bin/sc/PriceFeed.Oracle.manifest.json"
 
 echo "==> Starting Neo Express (config: ${CONFIG})"
-"${NEOXP}" check --config "${CONFIG}" >/dev/null
-"${NEOXP}" run --config "${CONFIG}" >/dev/null 2>&1 &
+LOG_FILE="$(mktemp)"
+echo "   neo express log: ${LOG_FILE}"
+"${NEOXP}" run -i "${CONFIG}" -s 1 -d >"${LOG_FILE}" 2>&1 &
 NEOXP_PID=$!
 trap 'kill ${NEOXP_PID} >/dev/null 2>&1 || true' EXIT
 
 # Wait for RPC to respond
+echo "==> Waiting for Neo Express RPC at ${RPC_ENDPOINT}"
+READY=0
 for i in {1..30}; do
   if curl -s "${RPC_ENDPOINT}" -d '{"jsonrpc":"2.0","method":"getblockcount","params":[],"id":1}' >/dev/null; then
+    READY=1
     break
   fi
   sleep 1
 done
+if [[ "${READY}" -ne 1 ]]; then
+  echo "Neo Express RPC not reachable. Log output:"
+  cat "${LOG_FILE}"
+  exit 1
+fi
 
 echo "==> Running Neo Express integration tests"
 RUN_NEO_EXPRESS_TESTS=true \
