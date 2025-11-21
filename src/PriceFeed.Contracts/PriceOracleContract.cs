@@ -301,7 +301,7 @@ namespace PriceFeed.Contracts
                 return false; // Oracle already exists
 
             // Add the oracle
-            oracles.Put(oracleAddress, 1);
+            oracles.Put(oracleAddress, oracleAddress);
 
             // Increment oracle count
             BigInteger count = Storage.Get(context, OracleCountKey) is ByteString countData ? new BigInteger((byte[])countData) : 0;
@@ -382,7 +382,7 @@ namespace PriceFeed.Contracts
                 return false; // TEE account already exists
 
             // Add the TEE account
-            teeAccounts.Put(teeAccountAddress, 1);
+            teeAccounts.Put(teeAccountAddress, teeAccountAddress);
 
             // Event will be fired automatically by the Neo runtime
 
@@ -713,8 +713,11 @@ namespace PriceFeed.Contracts
             var oracleIterator = oraclesMap.Find();
             while (oracleIterator.Next())
             {
-                ByteString storedKey = (ByteString)oracleIterator.Key!;
-                UInt160 oracleAddress = (UInt160)storedKey;
+                var stored = oracleIterator.Value as ByteString;
+                if (stored is null)
+                    continue;
+
+                UInt160 oracleAddress = (UInt160)stored;
                 if (Runtime.CheckWitness(oracleAddress))
                 {
                     hasOracleSignature = true;
@@ -726,8 +729,11 @@ namespace PriceFeed.Contracts
             var teeIterator = teeAccountsMap.Find();
             while (teeIterator.Next())
             {
-                ByteString storedKey = (ByteString)teeIterator.Key!;
-                UInt160 teeAddress = (UInt160)storedKey;
+                var stored = teeIterator.Value as ByteString;
+                if (stored is null)
+                    continue;
+
+                UInt160 teeAddress = (UInt160)stored;
                 if (Runtime.CheckWitness(teeAddress))
                 {
                     hasTeeSignature = true;
