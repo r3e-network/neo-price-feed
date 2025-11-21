@@ -82,7 +82,7 @@ namespace PriceFeed.Contracts
         /// <param name="owner">The initial contract owner address</param>
         /// <param name="initialTeeAccount">The initial TEE account address (optional)</param>
         /// <returns>True if initialization was successful</returns>
-        public static bool Initialize(UInt160 owner, UInt160 initialTeeAccount = null!)
+        public static bool Initialize(UInt160 owner, UInt160? initialTeeAccount = null)
         {
             // Check if already initialized
             var context = Storage.CurrentContext;
@@ -102,10 +102,10 @@ namespace PriceFeed.Contracts
             Storage.Put(context, CircuitBreakerKey, 0);
 
             // Add initial TEE account if provided
-            if (initialTeeAccount != null)
+            if (initialTeeAccount is not null)
             {
                 StorageMap teeAccounts = new StorageMap(context, TeeAccountPrefix);
-                teeAccounts.Put(initialTeeAccount, 1);
+                teeAccounts.Put(initialTeeAccount, initialTeeAccount);
 
                 // Event will be fired automatically by the Neo runtime
             }
@@ -218,7 +218,11 @@ namespace PriceFeed.Contracts
 
             // Get the current owner
             var context = Storage.CurrentContext;
-            UInt160 currentOwner = (UInt160)Storage.Get(context, OwnerKey);
+            var ownerBytes = Storage.Get(context, OwnerKey) as ByteString;
+            if (ownerBytes is null)
+                return false;
+
+            UInt160 currentOwner = (UInt160)ownerBytes;
 
             // Set the new owner
             Storage.Put(context, OwnerKey, newOwner);
@@ -752,7 +756,8 @@ namespace PriceFeed.Contracts
         public static UInt160 GetOwner()
         {
             var context = Storage.CurrentContext;
-            return (UInt160)Storage.Get(context, OwnerKey);
+            var ownerBytes = Storage.Get(context, OwnerKey) as ByteString;
+            return ownerBytes is not null ? (UInt160)ownerBytes : UInt160.Zero;
         }
 
         /// <summary>
@@ -762,7 +767,7 @@ namespace PriceFeed.Contracts
         private static bool IsOwner()
         {
             UInt160 owner = GetOwner();
-            return Runtime.CheckWitness(owner);
+            return owner != UInt160.Zero && Runtime.CheckWitness(owner);
         }
     }
 }
