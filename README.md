@@ -39,7 +39,7 @@ For detailed information, see:
 
 **⚠️ DEPLOYED BUT NOT INITIALIZED ON NEO N3 TESTNET**
 
-- **Contract Hash**: `0xc14ffc3f28363fe59645873b28ed3ed8ccb774cc`
+- **Contract Hash**: `0xc14ffc3f28363fe59645873b28ed3ed8ccb774cc` (re-deploy with the latest NEF/manifest and update this hash)
 - **Network**: Neo N3 TestNet
 - **Status**: 🟡 **NEEDS INITIALIZATION** - Contract deployed but not yet initialized
 - **TEE Account**: `NiNmXL8FjEUEs1nfX9uHFBNaenxDHJtmuB`
