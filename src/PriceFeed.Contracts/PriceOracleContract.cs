@@ -713,7 +713,8 @@ namespace PriceFeed.Contracts
             var oracleIterator = oraclesMap.Find();
             while (oracleIterator.Next())
             {
-                UInt160 oracleAddress = (UInt160)(oracleIterator.Value as ByteString)!;
+                ByteString storedKey = (ByteString)oracleIterator.Key!;
+                UInt160 oracleAddress = (UInt160)storedKey;
                 if (Runtime.CheckWitness(oracleAddress))
                 {
                     hasOracleSignature = true;
@@ -725,7 +726,8 @@ namespace PriceFeed.Contracts
             var teeIterator = teeAccountsMap.Find();
             while (teeIterator.Next())
             {
-                UInt160 teeAddress = (UInt160)(teeIterator.Value as ByteString)!;
+                ByteString storedKey = (ByteString)teeIterator.Key!;
+                UInt160 teeAddress = (UInt160)storedKey;
                 if (Runtime.CheckWitness(teeAddress))
                 {
                     hasTeeSignature = true;
