@@ -72,10 +72,9 @@ namespace PriceFeed.Infrastructure.Services
 
                 // Save attestation to file (persistent storage)
                 var attestationJson = JsonConvert.SerializeObject(attestation, Formatting.Indented);
-                var attestationPath = Path.Combine("attestations", "account_attestation.json");
-
-                // Ensure directory exists
-                Directory.CreateDirectory(Path.GetDirectoryName(attestationPath)!);
+                var accountDir = Path.Combine(_baseAttestationDirectory, "account");
+                Directory.CreateDirectory(accountDir);
+                var attestationPath = Path.Combine(accountDir, $"account_attestation_{runId}_{runNumber}.json");
 
                 // Write attestation to file
                 await File.WriteAllTextAsync(attestationPath, attestationJson);
@@ -132,10 +131,9 @@ namespace PriceFeed.Infrastructure.Services
 
                 // Save attestation to file (persistent storage)
                 var attestationJson = JsonConvert.SerializeObject(attestation, Formatting.Indented);
-                var attestationPath = Path.Combine("attestations", "account_attestation.json");
-
-                // Ensure directory exists
-                Directory.CreateDirectory(Path.GetDirectoryName(attestationPath)!);
+                var accountDir = Path.Combine(_baseAttestationDirectory, "account");
+                Directory.CreateDirectory(accountDir);
+                var attestationPath = Path.Combine(accountDir, $"account_attestation_{runId}_{runNumber}.json");
 
                 // Write attestation to file
                 await File.WriteAllTextAsync(attestationPath, attestationJson);
