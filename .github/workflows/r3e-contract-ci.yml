@@ -32,7 +32,7 @@ jobs:
         dotnet-version: ${{ env.DOTNET_VERSION }}
 
     - name: Cache NuGet packages
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: ~/.nuget/packages
         key: ${{ runner.os }}-nuget-${{ hashFiles('**/packages.lock.json') }}
@@ -78,7 +78,7 @@ jobs:
         fi
 
     - name: Upload contract artifacts
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       if: github.event_name == 'push' && github.ref == 'refs/heads/main'
       with:
         name: r3e-contract-artifacts
@@ -120,7 +120,7 @@ jobs:
         dotnet-version: ${{ env.DOTNET_VERSION }}
 
     - name: Download contract artifacts
-      uses: actions/download-artifact@v3
+      uses: actions/download-artifact@v4
       with:
         name: r3e-contract-artifacts
         path: src/PriceFeed.R3E/PriceFeed.R3E.Contract/bin/sc/
