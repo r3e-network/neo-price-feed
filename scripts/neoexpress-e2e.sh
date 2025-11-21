@@ -12,6 +12,8 @@ set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 CONFIG="${ROOT_DIR}/src/PriceFeed.Contracts/neo-express.config.json"
+WORK_DIR="$(mktemp -d)"
+DATA_FILE="${WORK_DIR}/privnet.neo-express"
 NEOXP="$(command -v neoxp || command -v neo-express || true)"
 
 if [[ -z "$NEOXP" ]]; then
@@ -27,10 +29,13 @@ dotnet build "${ROOT_DIR}/src/PriceFeed.Contracts/PriceFeed.Contracts.csproj" -c
 NEF="${ROOT_DIR}/src/PriceFeed.Contracts/bin/sc/PriceFeed.Oracle.nef"
 MANIFEST="${ROOT_DIR}/src/PriceFeed.Contracts/bin/sc/PriceFeed.Oracle.manifest.json"
 
+echo "==> Creating Neo Express data file in ${WORK_DIR}"
+"${NEOXP}" create --output "${DATA_FILE}" --count 1 >/dev/null
+
 echo "==> Starting Neo Express (config: ${CONFIG})"
 LOG_FILE="$(mktemp)"
 echo "   neo express log: ${LOG_FILE}"
-"${NEOXP}" run -i "${CONFIG}" -s 1 -d >"${LOG_FILE}" 2>&1 &
+"${NEOXP}" run -i "${DATA_FILE}" -s 1 -d >"${LOG_FILE}" 2>&1 &
 NEOXP_PID=$!
 trap 'kill ${NEOXP_PID} >/dev/null 2>&1 || true' EXIT
 
