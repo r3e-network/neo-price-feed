@@ -1,49 +1,72 @@
 #!/usr/bin/env python3
 """
-Calculate the expected contract hash for Neo N3 deployment
+Calculate the PriceFeed contract hash using neo-express.
+
+Requirements:
+- dotnet build tooling (to compile the contract)
+- neo-express (neoxp) on PATH
 """
 
-import hashlib
-import json
+import argparse
+import shutil
+import subprocess
+from pathlib import Path
+import sys
 
-def calculate_contract_hash(sender_address: str, nef_checksum: int, contract_name: str) -> str:
-    """
-    Calculate contract hash based on Neo N3 specification
-    """
-    # This is a simplified calculation - actual calculation requires Neo SDK
-    # For now, return a placeholder that indicates manual deployment needed
-    return "DEPLOYMENT_REQUIRED"
+ROOT = Path(__file__).resolve().parent.parent
+DEFAULT_NEF = ROOT / "src/PriceFeed.Contracts/bin/sc/PriceFeed.Oracle.nef"
+DEFAULT_ACCOUNT = "NTmHjwiadq4g3VHpJ5FQigQcD4fF5m8TyX"  # Master account used across configs
 
-print("🔍 Neo N3 Contract Hash Calculator")
-print("=" * 50)
 
-# Read manifest to get contract name
-try:
-    with open("src/PriceFeed.Contracts/PriceFeed.Oracle.manifest.json", "r") as f:
-        manifest = json.load(f)
-        contract_name = manifest.get("name", "Unknown")
-        print(f"📄 Contract Name: {contract_name}")
-except Exception as e:
-    print(f"❌ Error reading manifest: {e}")
-    contract_name = "PriceFeed.Oracle"
+def run(cmd, **kwargs):
+    return subprocess.run(cmd, check=True, text=True, capture_output=True, **kwargs)
 
-print("\n⚠️  Contract Hash Calculation:")
-print("The actual contract hash can only be determined after deployment.")
-print("It depends on:")
-print("  1. The deployer's account (Master Account)")
-print("  2. The NEF file checksum")
-print("  3. The contract manifest")
 
-print("\n📝 For TestNet deployment, the contract hash will be shown after deployment.")
-print("Make sure to save it and update your configuration!")
+def main():
+    parser = argparse.ArgumentParser(description="Compute contract hash for the compiled PriceFeed contract.")
+    parser.add_argument("--nef", default=str(DEFAULT_NEF), help="Path to .nef file (defaults to compiled contract)")
+    parser.add_argument("--account", default=DEFAULT_ACCOUNT, help="Deployer account (address or label)")
+    parser.add_argument("--data-file", help="Optional neo-express data file to resolve account labels")
+    parser.add_argument("--skip-build", action="store_true", help="Skip rebuilding the contract before hashing")
+    args = parser.parse_args()
 
-# Create a sample configuration update
-sample_config = {
-    "BatchProcessing": {
-        "ContractScriptHash": "0x[YOUR_CONTRACT_HASH_HERE]",
-        "Comment": "Replace with actual hash after deployment"
-    }
-}
+    neoxp = shutil.which("neoxp") or shutil.which("neo-express")
+    if not neoxp:
+        print("neo-express (neoxp) is required. Install via: dotnet tool install -g Neo.Express", file=sys.stderr)
+        sys.exit(1)
 
-print("\n💡 After deployment, update appsettings.json:")
-print(json.dumps(sample_config, indent=2))
+    nef_path = Path(args.nef)
+    if not args.skip_build:
+        print("==> Building contract (Release)")
+        run(
+            [
+                "dotnet",
+                "build",
+                str(ROOT / "src/PriceFeed.Contracts/PriceFeed.Contracts.csproj"),
+                "-c",
+                "Release",
+                "--nologo",
+                "/p:GeneratePackageOnBuild=false",
+            ]
+        )
+
+    if not nef_path.is_file():
+        print(f"NEF file not found: {nef_path}", file=sys.stderr)
+        sys.exit(1)
+
+    cmd = [neoxp, "contract", "hash", str(nef_path), args.account]
+    if args.data_file:
+        cmd.extend(["-i", args.data_file])
+
+    print(f"==> Calculating contract hash from {nef_path}")
+    result = run(cmd)
+    contract_hash = result.stdout.strip().splitlines()[-1]
+
+    print("\nContract hash")
+    print("============")
+    print(contract_hash)
+    print("\nUpdate your configuration (BatchProcessing:ContractScriptHash) with the value above.")
+
+
+if __name__ == "__main__":
+    main()

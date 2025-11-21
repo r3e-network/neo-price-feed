@@ -183,7 +183,7 @@ public class NeoIntegrationTests
         var options = new BatchProcessingOptions
         {
             RpcEndpoint = "http://localhost:10332",
-            ContractScriptHash = "0xc14ffc3f28363fe59645873b28ed3ed8ccb774cc",
+            ContractScriptHash = "0x7b75a38c592af6b39d73d0ff971b125b5a55ad0d",
             TeeAccountAddress = "NXV7ZhHiyM1aHXwpVsRZC6BwNFP7jghXAq",
             TeeAccountPrivateKey = GenerateTestWIF(),
             MasterAccountAddress = "NL5P8BBjpPuLpH5gZBxATrxDLqXxjHqmkr",

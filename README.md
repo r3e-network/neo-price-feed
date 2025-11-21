@@ -383,6 +383,21 @@ Neo Express defaults to RPC port `50012` when created via `neoxp create`; set `N
 Notes for Neo Express script:
 - It resets `~/.neo-express/default.neo-express` and fast-forwards 200 blocks to mint GAS for `node1`
 - Deployment uses `node1`; contract price seeding requires dual signatures and may be skipped (tests will still do the RPC smoke check)
+
+### Smart Contract Build & Verification
+
+```bash
+# Build the contract (Release NEF/manifest)
+dotnet build src/PriceFeed.Contracts/PriceFeed.Contracts.csproj -c Release
+
+# Compute the expected contract hash for your deployer
+python3 scripts/calculate-contract-hash.py --account NTmHjwiadq4g3VHpJ5FQigQcD4fF5m8TyX
+
+# Run the deployer helper (verify) against a deployed contract hash
+dotnet run --project src/PriceFeed.ContractDeployer/PriceFeed.ContractDeployer.csproj --configuration Release -- verify
+```
+
+> If `verify` returns “Unknown contract”, update your `ORACLE_CONTRACT_HASH` (and related secrets/env) to the actual hash you deployed, or redeploy matching the current NEF/manifest.
 ```
 
 ## Logging

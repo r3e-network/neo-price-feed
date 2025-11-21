@@ -85,7 +85,7 @@ The deployer uses hardcoded configuration for security:
 - **RPC Endpoint**: `http://seed1t5.neo.org:20332`
 - **Master Account**: `NTmHjwiadq4g3VHpJ5FQigQcD4fF5m8TyX`
 - **TEE Account**: `NiNmXL8FjEUEs1nfX9uHFBNaenxDHJtmuB`
-- **Contract Hash**: `0xc14ffc3f28363fe59645873b28ed3ed8ccb774cc` (after deployment)
+- **Contract Hash**: `0x7b75a38c592af6b39d73d0ff971b125b5a55ad0d` (after deployment)
 
 ## Output
 
@@ -101,7 +101,7 @@ The deployer uses hardcoded configuration for security:
 🌐 Connected to TestNet: http://seed1t5.neo.org:20332
 💰 GAS Balance: 100
 📤 Deploying contract to TestNet...
-🎯 Expected Contract Hash: 0xc14ffc3f28363fe59645873b28ed3ed8ccb774cc
+🎯 Expected Contract Hash: 0x7b75a38c592af6b39d73d0ff971b125b5a55ad0d
 ✅ Deployment transaction sent!
 📋 Transaction Hash: 0x123...
 ⏳ Waiting for transaction confirmation...

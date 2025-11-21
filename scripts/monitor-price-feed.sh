@@ -5,7 +5,7 @@
 
 echo "📊 Neo Price Feed Oracle Monitor"
 echo "================================"
-echo "Contract: 0xc14ffc3f28363fe59645873b28ed3ed8ccb774cc"
+echo "Contract: 0x7b75a38c592af6b39d73d0ff971b125b5a55ad0d"
 echo "Press Ctrl+C to stop monitoring"
 echo ""
 

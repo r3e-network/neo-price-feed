@@ -67,7 +67,7 @@ jobs:
         TEE_ACCOUNT_PRIVATE_KEY: ${{ secrets.NEO_TEE_ACCOUNT_PRIVATE_KEY }}
         
         # Neo blockchain configuration
-        ORACLE_CONTRACT_HASH: ${{ secrets.ORACLE_CONTRACT_HASH || '0xc14ffc3f28363fe59645873b28ed3ed8ccb774cc' }}
+        ORACLE_CONTRACT_HASH: ${{ secrets.ORACLE_CONTRACT_HASH || '0x7b75a38c592af6b39d73d0ff971b125b5a55ad0d' }}
         NEO_RPC_URL: ${{ secrets.NEO_RPC_URL || 'http://seed1t5.neo.org:20332' }}
         
         # API configuration
@@ -108,7 +108,7 @@ jobs:
     - name: Test Price Feed Results
       if: success()
       env:
-        ORACLE_CONTRACT_HASH: ${{ secrets.ORACLE_CONTRACT_HASH || '0xc14ffc3f28363fe59645873b28ed3ed8ccb774cc' }}
+        ORACLE_CONTRACT_HASH: ${{ secrets.ORACLE_CONTRACT_HASH || '0x7b75a38c592af6b39d73d0ff971b125b5a55ad0d' }}
         NEO_RPC_URL: ${{ secrets.NEO_RPC_URL || 'http://seed1t5.neo.org:20332' }}
       run: |
         echo "Testing price feed results..."

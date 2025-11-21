@@ -43,7 +43,7 @@ namespace PriceFeed.Tests;
         _optionsMock.Setup(o => o.Value).Returns(new BatchProcessingOptions
         {
             RpcEndpoint = "http://localhost:10332",
-            ContractScriptHash = "0xc14ffc3f28363fe59645873b28ed3ed8ccb774cc",
+            ContractScriptHash = "0x7b75a38c592af6b39d73d0ff971b125b5a55ad0d",
             TeeAccountAddress = _teeAddress,
             TeeAccountPrivateKey = _teeWif,
             MasterAccountAddress = _masterAddress,
@@ -151,7 +151,7 @@ namespace PriceFeed.Tests;
         _optionsMock.Setup(o => o.Value).Returns(new BatchProcessingOptions
         {
             RpcEndpoint = "http://localhost:10332",
-            ContractScriptHash = "0xc14ffc3f28363fe59645873b28ed3ed8ccb774cc",
+            ContractScriptHash = "0x7b75a38c592af6b39d73d0ff971b125b5a55ad0d",
             TeeAccountAddress = _teeAddress,
             TeeAccountPrivateKey = _teeWif,
             MasterAccountAddress = _masterAddress,
@@ -246,7 +246,7 @@ namespace PriceFeed.Tests;
         _optionsMock.Setup(o => o.Value).Returns(new BatchProcessingOptions
         {
             RpcEndpoint = "http://localhost:10332",
-            ContractScriptHash = "0xc14ffc3f28363fe59645873b28ed3ed8ccb774cc",
+            ContractScriptHash = "0x7b75a38c592af6b39d73d0ff971b125b5a55ad0d",
             TeeAccountAddress = _teeAddress,
             TeeAccountPrivateKey = "invalid",
             MasterAccountAddress = _masterAddress,
@@ -262,7 +262,7 @@ namespace PriceFeed.Tests;
         _optionsMock.Setup(o => o.Value).Returns(new BatchProcessingOptions
         {
             RpcEndpoint = "http://localhost:10332",
-            ContractScriptHash = "0xc14ffc3f28363fe59645873b28ed3ed8ccb774cc",
+            ContractScriptHash = "0x7b75a38c592af6b39d73d0ff971b125b5a55ad0d",
             TeeAccountAddress = _teeAddress,
             TeeAccountPrivateKey = _teeWif,
             MasterAccountAddress = _masterAddress,

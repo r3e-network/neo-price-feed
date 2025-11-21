@@ -22,6 +22,7 @@ namespace PriceFeed.Contracts
     [ContractPermission("*", "onNEP17Payment")]
     public class PriceOracleContract : SmartContract
     {
+#pragma warning disable CS0067 // Events are emitted by Neo runtime; not referenced in C# code
         // Events
         [DisplayName("PriceUpdated")]
         public static event Action<string, BigInteger, BigInteger, BigInteger>? OnPriceUpdated; // symbol, price, timestamp, confidence
@@ -55,6 +56,7 @@ namespace PriceFeed.Contracts
 
         [DisplayName("TeeAccountRemoved")]
         public static event Action<UInt160>? OnTeeAccountRemoved;
+#pragma warning restore CS0067
 
         // Storage keys
         private const string OwnerKey = "owner";
@@ -149,8 +151,11 @@ namespace PriceFeed.Contracts
         public static BigInteger GetMinOracles()
         {
             var context = Storage.CurrentContext;
-            ByteString data = Storage.Get(context, MinOraclesKey);
-            return data is not null ? new BigInteger((byte[])data) : DefaultMinOracles;
+            var data = Storage.Get(context, MinOraclesKey) as ByteString;
+            if (data is null || data.Length == 0)
+                return DefaultMinOracles;
+
+            return new BigInteger((byte[])data);
         }
 
         /// <summary>

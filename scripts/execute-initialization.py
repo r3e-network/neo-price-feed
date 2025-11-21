@@ -20,7 +20,7 @@ from neo3.wallet import Account
 
 # Configuration
 RPC_ENDPOINT = "http://seed1t5.neo.org:20332"
-CONTRACT_HASH = "0xc14ffc3f28363fe59645873b28ed3ed8ccb774cc"
+CONTRACT_HASH = "0x7b75a38c592af6b39d73d0ff971b125b5a55ad0d"
 MASTER_ADDRESS = "NTmHjwiadq4g3VHpJ5FQigQcD4fF5m8TyX"
 MASTER_WIF = "KzjaqMvqzF1uup6KrTKRxTgjcXE7PbKLRH84e6ckyXDt3fu7afUb"
 TEE_ADDRESS = "NiNmXL8FjEUEs1nfX9uHFBNaenxDHJtmuB"

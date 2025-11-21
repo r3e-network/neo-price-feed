@@ -1,7 +1,7 @@
 #!/bin/bash
 # Check the status of the deployed Neo Price Feed Oracle contract on TestNet
 
-CONTRACT_HASH="0xc14ffc3f28363fe59645873b28ed3ed8ccb774cc"
+CONTRACT_HASH="0x7b75a38c592af6b39d73d0ff971b125b5a55ad0d"
 RPC_ENDPOINT="http://seed1t5.neo.org:20332"
 
 echo "Neo Price Feed Oracle - Contract Status Check"

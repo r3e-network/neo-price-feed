@@ -323,7 +323,7 @@ expect eof
                 
                 Console.WriteLine($"\n✅ Deployment prepared. Follow the instructions above to deploy.");
                 Console.WriteLine($"\n📊 Expected Results:");
-                Console.WriteLine($"   Contract Hash: 0xc14ffc3f28363fe59645873b28ed3ed8ccb774cc");
+                Console.WriteLine($"   Contract Hash: 0x7b75a38c592af6b39d73d0ff971b125b5a55ad0d");
                 Console.WriteLine($"   Deployment Cost: ~10.002 GAS");
             }
             catch (Exception ex)
@@ -344,7 +344,7 @@ curl -X POST http://seed1t5.neo.org:20332 \
   -d '{
     ""jsonrpc"": ""2.0"",
     ""method"": ""getcontractstate"",
-    ""params"": [""0xc14ffc3f28363fe59645873b28ed3ed8ccb774cc""],
+    ""params"": [""0x7b75a38c592af6b39d73d0ff971b125b5a55ad0d""],
     ""id"": 1
   }'
 ";
@@ -364,7 +364,7 @@ curl -X POST http://seed1t5.neo.org:20332 \
                 {
                     jsonrpc = "2.0",
                     method = "getcontractstate",
-                    @params = new[] { "0xc14ffc3f28363fe59645873b28ed3ed8ccb774cc" },
+                    @params = new[] { "0x7b75a38c592af6b39d73d0ff971b125b5a55ad0d" },
                     id = 1
                 };
                 
