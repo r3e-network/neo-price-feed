@@ -195,6 +195,36 @@ namespace PriceFeed.Tests;
     }
 
     [Fact]
+    public async Task ProcessBatchAsync_WhenAttestationFails_ShouldThrow()
+    {
+        _rpcClientMock.Setup(r => r.SubmitScriptAsync(
+                It.IsAny<ReadOnlyMemory<byte>>(),
+                It.IsAny<Signer[]>(),
+                It.IsAny<KeyPair[]>()))
+            .ReturnsAsync(UInt256.Zero);
+
+        _attestationServiceMock.Setup(a => a.CreatePriceFeedAttestationAsync(
+                It.IsAny<PriceBatch>(),
+                It.IsAny<string>(),
+                It.IsAny<string>(),
+                It.IsAny<string>(),
+                It.IsAny<string>(),
+                It.IsAny<string>(),
+                It.IsAny<string>()))
+            .ThrowsAsync(new InvalidOperationException("attestation failure"));
+
+        var service = CreateService();
+        var batch = CreateBatch(1);
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() => service.ProcessBatchAsync(batch));
+
+        _rpcClientMock.Verify(r => r.SubmitScriptAsync(
+            It.IsAny<ReadOnlyMemory<byte>>(),
+            It.IsAny<Signer[]>(),
+            It.IsAny<KeyPair[]>()), Times.Once);
+    }
+
+    [Fact]
     public void Constructor_WithInvalidContractHash_ShouldThrow()
     {
         _optionsMock.Setup(o => o.Value).Returns(new BatchProcessingOptions
