@@ -2,6 +2,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using PriceFeed.Core.Options;
 using PriceFeed.Infrastructure.DataSources;
+using PriceFeed.Tests.TestUtilities;
 using System.Net.Http;
 using Xunit;
 
@@ -47,7 +48,7 @@ public class KrakenDataSourceAdapterRealApiTests
         };
     }
 
-    [Fact(Skip = "Uses live Kraken API; set RUN_LIVE_API_TESTS=true to run explicitly.")]
+    [CITestHelper.LiveApiFact]
     public async Task GetPriceDataAsync_WithRealApi_ShouldReturnValidPriceData()
     {
         // Arrange
@@ -68,7 +69,7 @@ public class KrakenDataSourceAdapterRealApiTests
         Assert.True(result.Volume > 0, "Volume should be greater than 0");
     }
 
-    [Fact(Skip = "Uses live Kraken API; set RUN_LIVE_API_TESTS=true to run explicitly.")]
+    [CITestHelper.LiveApiFact]
     public async Task GetSupportedSymbolsAsync_WithRealApi_ShouldReturnSupportedSymbols()
     {
         // Arrange
@@ -87,7 +88,7 @@ public class KrakenDataSourceAdapterRealApiTests
         Assert.Contains("ETHUSDT", result);
     }
 
-    [Fact(Skip = "Uses live Kraken API; set RUN_LIVE_API_TESTS=true to run explicitly.")]
+    [CITestHelper.LiveApiFact]
     public async Task GetPriceDataAsync_WithUnsupportedSymbol_ShouldThrowException()
     {
         // Arrange

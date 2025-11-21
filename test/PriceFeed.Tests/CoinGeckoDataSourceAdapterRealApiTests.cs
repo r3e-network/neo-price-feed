@@ -4,6 +4,7 @@ using PriceFeed.Core.Options;
 using PriceFeed.Infrastructure.DataSources;
 using System.Net.Http;
 using Xunit;
+using PriceFeed.Tests.TestUtilities;
 
 namespace PriceFeed.Tests;
 
@@ -47,7 +48,7 @@ public class CoinGeckoDataSourceAdapterRealApiTests
         };
     }
 
-    [Fact(Skip = "Uses live CoinGecko API; set RUN_LIVE_API_TESTS=true to run explicitly.")]
+    [CITestHelper.LiveApiFact]
     public async Task GetPriceDataAsync_WithRealApi_ShouldReturnValidPriceData()
     {
         // Arrange
@@ -69,7 +70,7 @@ public class CoinGeckoDataSourceAdapterRealApiTests
         Assert.True(result.Metadata.ContainsKey("PriceChange24h"), "Metadata should contain 24h price change");
     }
 
-    [Fact(Skip = "Uses live CoinGecko API; set RUN_LIVE_API_TESTS=true to run explicitly.")]
+    [CITestHelper.LiveApiFact]
     public async Task GetSupportedSymbolsAsync_WithRealApi_ShouldReturnSupportedSymbols()
     {
         // Arrange
@@ -88,7 +89,7 @@ public class CoinGeckoDataSourceAdapterRealApiTests
         Assert.Contains("ETHUSDT", result);
     }
 
-    [Fact(Skip = "Uses live CoinGecko API; set RUN_LIVE_API_TESTS=true to run explicitly.")]
+    [CITestHelper.LiveApiFact]
     public async Task GetPriceDataAsync_WithUnsupportedSymbol_ShouldThrowException()
     {
         // Arrange

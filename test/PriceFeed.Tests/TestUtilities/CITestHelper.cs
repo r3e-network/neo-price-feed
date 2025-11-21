@@ -33,4 +33,20 @@ public static class CITestHelper
             Timeout = 30000;
         }
     }
+
+    /// <summary>
+    /// Fact attribute that skips live API tests unless explicitly enabled.
+    /// </summary>
+    public class LiveApiFactAttribute : FactAttribute
+    {
+        public LiveApiFactAttribute()
+        {
+            if (Environment.GetEnvironmentVariable("RUN_LIVE_API_TESTS") != "true" || IsRunningInCI)
+            {
+                Skip = "Live API tests are skipped by default. Set RUN_LIVE_API_TESTS=true to run.";
+            }
+
+            Timeout = 30000;
+        }
+    }
 }
