@@ -143,8 +143,48 @@ public class BatchProcessingOptionsValidatorTests
 
         var result = _validator.Validate("BatchProcessing", options);
 
-        Assert.True(result.Failed);
+         Assert.True(result.Failed);
         Assert.Contains("Max batch size should not exceed 100", result.FailureMessage);
+    }
+
+    [Fact]
+    public void Validate_WithTeePrivateKeyTooShort_ReturnsFail()
+    {
+        var options = new BatchProcessingOptions
+        {
+            RpcEndpoint = "https://mainnet.neo.org",
+            ContractScriptHash = "0x1234567890123456789012345678901234567890",
+            TeeAccountAddress = "NQPBWiGruFDpRrGNMDuGHLa7HkSZAZDk9x",
+            TeeAccountPrivateKey = "short",
+            MasterAccountAddress = "NZMyYadiW93JrpUxj7758BDppnND4KUu6X",
+            MasterAccountPrivateKey = "L2QqQJnpBwbsPGAuutuzPTac8piqvbR1HRjrY5qHup48TBCBFe4g",
+            MaxBatchSize = 50
+        };
+
+        var result = _validator.Validate("BatchProcessing", options);
+
+        Assert.True(result.Failed);
+        Assert.Contains("TEE account private key appears to be invalid", result.FailureMessage);
+    }
+
+    [Fact]
+    public void Validate_WithMasterPrivateKeyTooShort_ReturnsFail()
+    {
+        var options = new BatchProcessingOptions
+        {
+            RpcEndpoint = "https://mainnet.neo.org",
+            ContractScriptHash = "0x1234567890123456789012345678901234567890",
+            TeeAccountAddress = "NQPBWiGruFDpRrGNMDuGHLa7HkSZAZDk9x",
+            TeeAccountPrivateKey = "L1QqQJnpBwbsPGAuutuzPTac8piqvbR1HRjrY5qHup48TBCBFe4g",
+            MasterAccountAddress = "NZMyYadiW93JrpUxj7758BDppnND4KUu6X",
+            MasterAccountPrivateKey = "short",
+            MaxBatchSize = 50
+        };
+
+        var result = _validator.Validate("BatchProcessing", options);
+
+        Assert.True(result.Failed);
+        Assert.Contains("Master account private key appears to be invalid", result.FailureMessage);
     }
 
     [Fact]
