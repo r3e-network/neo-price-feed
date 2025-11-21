@@ -10,11 +10,11 @@ import subprocess
 import sys
 import os
 
-# Configuration
-RPC_ENDPOINT = "http://seed1t5.neo.org:20332"
-CONTRACT_HASH = "0xc14ffc3f28363fe59645873b28ed3ed8ccb774cc"
-MASTER_ADDRESS = "NTmHjwiadq4g3VHpJ5FQigQcD4fF5m8TyX"
-TEE_ADDRESS = "NiNmXL8FjEUEs1nfX9uHFBNaenxDHJtmuB"
+# Configuration (overridable via environment)
+RPC_ENDPOINT = os.environ.get("NEO_RPC_URL", "http://seed1t5.neo.org:20332")
+CONTRACT_HASH = os.environ.get("ORACLE_CONTRACT_HASH", "0x7b75a38c592af6b39d73d0ff971b125b5a55ad0d")
+MASTER_ADDRESS = os.environ.get("MASTER_ACCOUNT_ADDRESS", "NTmHjwiadq4g3VHpJ5FQigQcD4fF5m8TyX")
+TEE_ADDRESS = os.environ.get("NEO_TEE_ACCOUNT_ADDRESS", "NiNmXL8FjEUEs1nfX9uHFBNaenxDHJtmuB")
 
 def rpc_call(method, params=None):
     """Make RPC call"""
@@ -88,12 +88,12 @@ def initialize_contract():
     print("🔧 Initializing contract...")
     
     # Step 1: Initialize
-    cmd1 = f'neo-mamba contract invoke {CONTRACT_HASH} initialize "\\"{MASTER_ADDRESS}\\"" "\\"{TEE_ADDRESS}\\"" --wallet-wif {master_wif} --rpc {RPC_ENDPOINT} --force'
+    cmd1 = f'neo-mamba contract invoke {CONTRACT_HASH} initialize "{MASTER_ADDRESS}" "{TEE_ADDRESS}" --wallet-wif {master_wif} --rpc {RPC_ENDPOINT} --force'
     if not run_neo_mamba_command(cmd1):
         return False
     
     # Step 2: Add oracle
-    cmd2 = f'neo-mamba contract invoke {CONTRACT_HASH} addOracle "\\"{TEE_ADDRESS}\\"" --wallet-wif {master_wif} --rpc {RPC_ENDPOINT} --force'
+    cmd2 = f'neo-mamba contract invoke {CONTRACT_HASH} addOracle "{TEE_ADDRESS}" --wallet-wif {master_wif} --rpc {RPC_ENDPOINT} --force'
     if not run_neo_mamba_command(cmd2):
         return False
     

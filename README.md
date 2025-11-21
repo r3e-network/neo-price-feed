@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="assets/logo.svg" alt="Neo Price Feed logo" width="520" />
+</p>
+
 # Neo N3 Price Feed Service with TEE
 
 A production-ready price feed service for Neo N3 blockchain that leverages a Trusted Execution Environment (TEE). The service fetches data from multiple sources, aggregates it, and submits it to a smart contract on-chain using a dual-signature transaction system.
@@ -35,22 +39,22 @@ For detailed information, see:
 [![Neo](https://img.shields.io/badge/Neo-N3-green.svg)](https://neo.org/)
 [![Documentation](https://img.shields.io/badge/docs-GitHub%20Pages-blue.svg)](https://r3e-network.github.io/neo-price-feed/)
 
-## 🚀 Live Deployment Status
+## 🚀 Deployment Status (current build)
 
-**⚠️ DEPLOYED BUT NOT INITIALIZED ON NEO N3 TESTNET**
-
-- **Contract Hash**: `0xc14ffc3f28363fe59645873b28ed3ed8ccb774cc` (re-deploy with the latest NEF/manifest and update this hash)
-- **Network**: Neo N3 TestNet
-- **Status**: 🟡 **NEEDS INITIALIZATION** - Contract deployed but not yet initialized
+- **Current build contract hash** (Master account): `0x7b75a38c592af6b39d73d0ff971b125b5a55ad0d`
+- **Network**: Neo N3 TestNet (seed1t5 RPC defaults in scripts)
+- **Status**: 🚧 Initialize after deployment (owner + oracle + min oracles)
 - **TEE Account**: `NiNmXL8FjEUEs1nfX9uHFBNaenxDHJtmuB`
-- **Next Step**: Run initialization commands below
+- **Next Step**: Deploy the latest NEF/manifest and run initialization commands below
+
+👉 Compute the hash for any redeploy with `scripts/calculate-contract-hash.py` (hash is deployment-account specific). Update explorer links after you deploy.
 
 📊 **Monitoring**:
-- Contract Hash: `0xc14ffc3f28363fe59645873b28ed3ed8ccb774cc` (verified on-chain)
+- Current build hash: `0x7b75a38c592af6b39d73d0ff971b125b5a55ad0d`
 - [GitHub Actions Status](https://github.com/r3e-network/neo-price-feed/actions)
 - [Price Feed Workflow](https://github.com/r3e-network/neo-price-feed/actions/workflows/price-feed.yml)
 
-⚠️ **Action Required**: Run `./scripts/one-command-init.sh` to initialize the contract (takes ~30 seconds).
+⚠️ **Action Required**: After deploying the latest build, run `./scripts/one-command-init.sh` to initialize the contract (takes ~30 seconds).
 
 ## Supported Cryptocurrencies
 
@@ -100,13 +104,13 @@ If you prefer manual control:
 pip install neo-mamba
 
 # Initialize contract (replace YOUR_WIF with your Master Account WIF)
-neo-mamba contract invoke 0xc14ffc3f28363fe59645873b28ed3ed8ccb774cc initialize "NTmHjwiadq4g3VHpJ5FQigQcD4fF5m8TyX" "NiNmXL8FjEUEs1nfX9uHFBNaenxDHJtmuB" --wallet-wif YOUR_WIF --rpc http://seed1t5.neo.org:20332 --force
+neo-mamba contract invoke 0x7b75a38c592af6b39d73d0ff971b125b5a55ad0d initialize "NTmHjwiadq4g3VHpJ5FQigQcD4fF5m8TyX" "NiNmXL8FjEUEs1nfX9uHFBNaenxDHJtmuB" --wallet-wif YOUR_WIF --rpc http://seed1t5.neo.org:20332 --force
 
 # Add TEE as oracle
-neo-mamba contract invoke 0xc14ffc3f28363fe59645873b28ed3ed8ccb774cc addOracle "NiNmXL8FjEUEs1nfX9uHFBNaenxDHJtmuB" --wallet-wif YOUR_WIF --rpc http://seed1t5.neo.org:20332 --force
+neo-mamba contract invoke 0x7b75a38c592af6b39d73d0ff971b125b5a55ad0d addOracle "NiNmXL8FjEUEs1nfX9uHFBNaenxDHJtmuB" --wallet-wif YOUR_WIF --rpc http://seed1t5.neo.org:20332 --force
 
 # Set minimum oracles
-neo-mamba contract invoke 0xc14ffc3f28363fe59645873b28ed3ed8ccb774cc setMinOracles 1 --wallet-wif YOUR_WIF --rpc http://seed1t5.neo.org:20332 --force
+neo-mamba contract invoke 0x7b75a38c592af6b39d73d0ff971b125b5a55ad0d setMinOracles 1 --wallet-wif YOUR_WIF --rpc http://seed1t5.neo.org:20332 --force
 ```
 
 ## 🔍 Verify Status
@@ -368,8 +372,17 @@ dotnet test /p:CollectCoverage=true /p:CoverletOutputFormat=opencover
 RUN_LIVE_API_TESTS=true dotnet test       # live CoinGecko/Kraken API tests
 RUN_INTEGRATION_TESTS=true dotnet test    # integration tests
 RUN_NEO_EXPRESS_TESTS=true \\
-  NEO_EXPRESS_RPC_ENDPOINT=http://localhost:20332 \\
+  NEO_EXPRESS_RPC_ENDPOINT=http://localhost:50012 \\
   dotnet test                            # Neo Express RPC smoke test (requires running neo-express)
+
+# End-to-end Neo Express workflow (isolated temp network)
+./scripts/neoexpress-e2e.sh
+
+Neo Express defaults to RPC port `50012` when created via `neoxp create`; set `NEO_EXPRESS_RPC_ENDPOINT` if your node listens on a different port (for example, `http://localhost:20332`). The one-command script uses the default Neo Express instance in `~/.neo-express`; if your `node1` wallet has insufficient GAS, contract deployment/price seeding is skipped but the RPC smoke test still runs.
+
+Notes for Neo Express script:
+- It resets `~/.neo-express/default.neo-express` and fast-forwards 200 blocks to mint GAS for `node1`
+- Deployment uses `node1`; contract price seeding requires dual signatures and may be skipped (tests will still do the RPC smoke check)
 ```
 
 ## Logging
@@ -470,11 +483,13 @@ NEO_RPC_URL                 # Neo RPC endpoint
 COINMARKETCAP_API_KEY       # Price data API key
 ```
 
+Compute `ORACLE_CONTRACT_HASH` deterministically from the compiled NEF and deployer account with `scripts/calculate-contract-hash.py` (defaults to the provided master account).
+
 ### Monitoring & Management
 
 **📊 Real-time Monitoring:**
 - [Live Workflow Runs](https://github.com/r3e-network/neo-price-feed/actions/workflows/price-feed.yml)
-- [Contract on Explorer](https://testnet.explorer.onegate.space/contract/0xc14ffc3f28363fe59645873b28ed3ed8ccb774cc)
+- Contract on Explorer: update with your deployed hash (current build: `0x7b75a38c592af6b39d73d0ff971b125b5a55ad0d`)
 - [All GitHub Actions](https://github.com/r3e-network/neo-price-feed/actions)
 
 **🎛️ Manual Operations:**
