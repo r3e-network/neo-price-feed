@@ -367,6 +367,9 @@ dotnet test /p:CollectCoverage=true /p:CoverletOutputFormat=opencover
 # (default is skipped; set env vars to run explicitly)
 RUN_LIVE_API_TESTS=true dotnet test       # live CoinGecko/Kraken API tests
 RUN_INTEGRATION_TESTS=true dotnet test    # integration tests
+RUN_NEO_EXPRESS_TESTS=true \\
+  NEO_EXPRESS_RPC_ENDPOINT=http://localhost:20332 \\
+  dotnet test                            # Neo Express RPC smoke test (requires running neo-express)
 ```
 
 ## Logging

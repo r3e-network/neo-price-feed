@@ -49,4 +49,20 @@ public static class CITestHelper
             Timeout = 30000;
         }
     }
+
+    /// <summary>
+    /// Fact attribute that skips Neo Express integration tests unless explicitly enabled.
+    /// </summary>
+    public class NeoExpressFactAttribute : FactAttribute
+    {
+        public NeoExpressFactAttribute()
+        {
+            if (Environment.GetEnvironmentVariable("RUN_NEO_EXPRESS_TESTS") != "true" || IsRunningInCI)
+            {
+                Skip = "Neo Express integration tests are skipped by default. Set RUN_NEO_EXPRESS_TESTS=true to run.";
+            }
+
+            Timeout = 30000;
+        }
+    }
 }
