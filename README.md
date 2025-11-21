@@ -382,7 +382,7 @@ Neo Express defaults to RPC port `50012` when created via `neoxp create`; set `N
 
 Notes for Neo Express script:
 - It resets `~/.neo-express/default.neo-express` and fast-forwards 200 blocks to mint GAS for `node1`
-- Deployment uses `node1`; contract price seeding requires dual signatures and may be skipped (tests will still do the RPC smoke check)
+- Deployment uses `node1`; contract price seeding requires dual signatures (TEE + oracle). The bundled script uses the same signer for both, so seeding may be skipped; RPC smoke still validates connectivity.
 - Seeding currently fails dual-signature checks (needs distinct oracle + TEE witnesses); RPC smoke still validates connectivity
 
 ### Smart Contract Build & Verification
