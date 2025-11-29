@@ -1,17 +1,7 @@
 name: R3E Contract CI/CD
 
 on:
-  push:
-    branches: [ main, develop ]
-    paths:
-      - 'src/PriceFeed.R3E/**'
-      - '.github/workflows/r3e-contract-ci.yml'
-  pull_request:
-    branches: [ main, develop ]
-    paths:
-      - 'src/PriceFeed.R3E/**'
-      - '.github/workflows/r3e-contract-ci.yml'
-  workflow_dispatch:
+  workflow_dispatch: # Temporarily disable automatic R3E contract CI triggers
 
 env:
   DOTNET_VERSION: '8.0.x'

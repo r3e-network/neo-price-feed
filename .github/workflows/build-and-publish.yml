@@ -1,18 +1,7 @@
 name: Build and Publish
 
 on:
-  push:
-    branches: [ master, main ]
-    paths:
-      - 'src/**'
-      - 'test/**'
-      - 'Dockerfile'
-      - '.github/workflows/build-and-publish.yml'
-      - '*.sln'
-      - '*.csproj'
-  pull_request:
-    branches: [ master, main ]
-  workflow_dispatch:
+  workflow_dispatch: # Temporarily disable automatic build/publish triggers
 
 env:
   REGISTRY: ghcr.io

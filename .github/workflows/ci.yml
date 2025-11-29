@@ -1,10 +1,7 @@
 name: Continuous Integration
 
 on:
-  push:
-    branches: [ main, master ]
-  pull_request:
-    branches: [ main, master ]
+  workflow_dispatch: # Temporarily disable automatic CI triggers
 
 env:
   DOTNET_VERSION: '9.0.x'

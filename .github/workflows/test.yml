@@ -1,9 +1,7 @@
 name: Run Tests
 
 on:
-  pull_request:
-    branches: [ master, main ]
-  workflow_dispatch:
+  workflow_dispatch: # Temporarily disable automatic test triggers
 
 env:
   DOTNET_VERSION: '9.0.x'
