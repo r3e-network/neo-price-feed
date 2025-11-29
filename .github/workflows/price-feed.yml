@@ -1,10 +1,7 @@
 name: Run Price Feed Service
 
 on:
-  schedule:
-    # Run every 10 minutes to keep price feed data fresh
-    - cron: '*/10 * * * *'
-  workflow_dispatch:
+  workflow_dispatch: # Temporarily disable scheduled runs
     inputs:
       environment:
         description: 'Environment to run against'
